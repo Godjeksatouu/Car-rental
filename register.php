@@ -57,6 +57,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors[] = "Cet email est déjà utilisé";
         }
     }
+     // Check if phone already exists
+    if (empty($errors)) {
+        $query = "SELECT id_client FROM CLIENT WHERE téléphone = ?";
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "s", $telephone);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($stmt);
+        
+        if (mysqli_stmt_num_rows($stmt) > 0) {
+            $errors[] = "Ce numéro de téléphone est déjà utilisé";
+        }
+    }
     
 ?>
 
