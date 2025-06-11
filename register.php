@@ -69,6 +69,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errors[] = "Ce numéro de téléphone est déjà utilisé";
         }
     }
+        // If no errors, create new user
+    if (empty($errors)) {
+        // Hash the password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        
+        $query = "INSERT INTO CLIENT (nom, prénom, email, téléphone, mot_de_passe) VALUES (?, ?, ?, ?, ?)";
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "sssss", $nom, $prenom, $email, $telephone, $hashed_password);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $userId = mysqli_insert_id($conn);
+            $_SESSION['user_id'] = $userId;
+            
+            // Redirect to homepage or requested page
+            $redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'index.php';
+            header("Location: $redirect");
+            exit();
+        } else {
+            $errors[] = "Erreur lors de l'inscription: " . mysqli_error($conn);
+        }
+    }
+}
     
 ?>
 
