@@ -14,6 +14,40 @@ include 'includes/config.php';
 <body>
     <?php include 'includes/header.php'; ?>
 
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Trouvez la voiture parfaite pour vos besoins</h1>
+            <p>Des véhicules modernes, confortables et économiques à votre disposition</p>
+            <div class="search-box">
+                <form action="cars.php" method="GET">
+                    <div class="form-group">
+                        <label for="marque">Marque</label>
+                        <select name="marque" id="marque">
+                            <option value="">Toutes les marques</option>
+                            <?php
+                            $query = "SELECT DISTINCT marque FROM VOITURE ORDER BY marque";
+                            $result = mysqli_query($conn, $query);
+                            while ($row = mysqli_fetch_assoc($result)) {
+                                echo '<option value="'.$row['marque'].'">'.$row['marque'].'</option>';
+                            }
+                            ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <select name="type" id="type">
+                            <option value="">Tous les types</option>
+                            <option value="diesel">Diesel</option>
+                            <option value="essence">Essence</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Rechercher</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
     <!-- Featured Cars -->
     <section class="featured-cars">
         <div class="container">
