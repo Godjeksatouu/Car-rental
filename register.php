@@ -45,6 +45,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($password !== $confirm_password) {
         $errors[] = "Les mots de passe ne correspondent pas";
     }
+    // Check if email already exists
+    if (empty($errors)) {
+        $query = "SELECT id_client FROM CLIENT WHERE email = ?";
+        $stmt = mysqli_prepare($conn, $query);
+        mysqli_stmt_bind_param($stmt, "s", $email);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($stmt);
+        
+        if (mysqli_stmt_num_rows($stmt) > 0) {
+            $errors[] = "Cet email est déjà utilisé";
+        }
+    }
     
 ?>
 
