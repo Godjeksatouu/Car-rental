@@ -1,6 +1,7 @@
 <?php
 session_start();
 include 'includes/config.php';
+include 'includes/functions.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -13,7 +14,6 @@ include 'includes/config.php';
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
-
     <!-- Hero Section -->
     <section class="hero">
         <div class="hero-content">
