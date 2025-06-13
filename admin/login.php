@@ -12,6 +12,48 @@ if (isLoggedIn()) {
     exit();
 }
 
+// Debug database connection
+if (!$conn) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
+
+// Check if ADMIN table exists
+$tableCheck = mysqli_query($conn, "SHOW TABLES LIKE 'ADMIN'");
+if (mysqli_num_rows($tableCheck) == 0) {
+    // ADMIN table doesn't exist, create it
+    $createTable = "CREATE TABLE IF NOT EXISTS ADMIN (
+        id_admin INT AUTO_INCREMENT PRIMARY KEY,
+        nom_utilisateur VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        mot_de_passe VARCHAR(255) NOT NULL,
+        date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )";
+    
+    if (!mysqli_query($conn, $createTable)) {
+        die("Error creating ADMIN table: " . mysqli_error($conn));
+    }
+    
+    // Insert default admin user
+    $adminUser = "admin";
+    $adminEmail = "admin@autodrive.com";
+    $adminPassword = password_hash("admin123", PASSWORD_DEFAULT);
+    
+    $insertAdmin = "INSERT INTO ADMIN (nom_utilisateur, email, mot_de_passe) VALUES (?, ?, ?)";
+    $stmt = mysqli_prepare($conn, $insertAdmin);
+    
+    if ($stmt === false) {
+        die("Error preparing statement: " . mysqli_error($conn));
+    }
+    
+    mysqli_stmt_bind_param($stmt, "sss", $adminUser, $adminEmail, $adminPassword);
+    
+    if (!mysqli_stmt_execute($stmt)) {
+        die("Error inserting admin user: " . mysqli_stmt_error($stmt));
+    }
+    
+    mysqli_stmt_close($stmt);
+}
+
 $email = $password = "";
 $errors = [];
 $isAdmin = true; // Always true since this is admin login page
@@ -34,18 +76,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Admin login
         $query = "SELECT * FROM ADMIN WHERE email = ?";
         $stmt = mysqli_prepare($conn, $query);
-        mysqli_stmt_bind_param($stmt, "s", $email);
-        mysqli_stmt_execute($stmt);
-        $result = mysqli_stmt_get_result($stmt);
         
-        if ($admin = mysqli_fetch_assoc($result)) {
-            if (isset($admin['mot_de_passe']) && password_verify($password, $admin['mot_de_passe'])) {
-                $_SESSION['admin_id'] = $admin['id_admin'];
-                header("Location: dashboard.php");
-                exit();
+        if ($stmt === false) {
+            $errors[] = "Erreur de préparation de la requête: " . mysqli_error($conn);
+        } else {
+            mysqli_stmt_bind_param($stmt, "s", $email);
+            
+            if (!mysqli_stmt_execute($stmt)) {
+                $errors[] = "Erreur d'exécution de la requête: " . mysqli_stmt_error($stmt);
+            } else {
+                $result = mysqli_stmt_get_result($stmt);
+                
+                if ($admin = mysqli_fetch_assoc($result)) {
+                    if (isset($admin['mot_de_passe']) && password_verify($password, $admin['mot_de_passe'])) {
+                        $_SESSION['admin_id'] = $admin['id_admin'];
+                        header("Location: dashboard.php");
+                        exit();
+                    }
+                }
+                $errors[] = "Email ou mot de passe incorrect";
             }
+            mysqli_stmt_close($stmt);
         }
-        $errors[] = "Email ou mot de passe incorrect";
     }
 }
 ?>
