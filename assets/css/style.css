@@ -2094,3 +2094,35 @@ footer {
         justify-content: center;
     }
 }
+.admin-login {
+    border-top: 4px solid var(--primary-color);
+}
+
+.admin-login .auth-header h1 {
+    color: var(--primary-color);
+}
+
+.admin-link {
+    text-align: center;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid var(--gray-200);
+}
+
+.admin-link a {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.admin-link a:hover {
+    color: var(--primary-color);
+}
+
+.admin-login .btn-primary {
+    background-color: var(--primary-color);
+}
+
+.admin-login .btn-primary:hover {
+    background-color: var(--primary-dark);
+}
