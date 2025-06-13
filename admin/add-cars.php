@@ -34,10 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt === false) {
-            die('Erreur prepare: ' . mysqli_error($conn));
+            die('Erreur f prepare: ' . mysqli_error($conn));
         }
 
-        mysqli_stmt_bind_param($stmt, "ssssidss", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $image);
+        mysqli_stmt_bind_param($stmt, "ssssidsi", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $image);
 
         if (mysqli_stmt_execute($stmt)) {
             $success = true;
