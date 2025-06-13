@@ -1519,3 +1519,240 @@ footer {
         margin: 0 auto;
     }
 }
+.profile-section {
+    padding: 64px 0;
+}
+
+.profile-content {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 32px;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    align-self: start;
+}
+
+.user-info {
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 24px;
+    display: flex;
+    align-items: center;
+}
+
+.user-avatar {
+    font-size: 3rem;
+    margin-right: 16px;
+}
+
+.user-name h3 {
+    margin-bottom: 4px;
+}
+
+.user-name p {
+    margin-bottom: 0;
+    opacity: 0.9;
+    font-size: 0.875rem;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    padding: 16px 24px;
+    color: var(--gray-700);
+    border-bottom: 1px solid var(--gray-200);
+    transition: var(--transition);
+}
+
+.sidebar-menu li a i {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar-menu li a:hover {
+    background-color: var(--gray-100);
+    color: var(--primary-color);
+}
+
+.sidebar-menu li.active a {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+/* Main Content Styles */
+.main-content {
+    background-color: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 32px;
+}
+
+.section-header {
+    margin-bottom: 32px;
+}
+
+.section-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+    color: var(--gray-800);
+}
+
+.section-header p {
+    color: var(--gray-600);
+}
+
+/* Profile Form Styles */
+.profile-form {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 24px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+    transition: var(--transition);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(53, 99, 233, 0.25);
+}
+
+.form-note {
+    margin-bottom: 24px;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.form-actions {
+    margin-top: 32px;
+}
+
+/* Alert Styles */
+.alert {
+    padding: 16px;
+    border-radius: var(--border-radius);
+    margin-bottom: 24px;
+}
+
+.alert-error {
+    background-color: #FEE2E2;
+    color: #B91C1C;
+    border: 1px solid #FCA5A5;
+}
+
+.alert-success {
+    background-color: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+}
+
+.alert ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.alert ul li {
+    margin-bottom: 4px;
+}
+
+.alert ul li:last-child {
+    margin-bottom: 0;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    border: none;
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 992px) {
+    .profile-content {
+        grid-template-columns: 250px 1fr;
+        gap: 24px;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .profile-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .sidebar {
+        margin-bottom: 24px;
+    }
+    
+    .main-content {
+        padding: 24px;
+    }
+    
+    .section-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .form-group {
+        margin-bottom: 16px;
+    }
+    
+    .form-actions {
+        margin-top: 24px;
+    }
+}
+
+@media screen and (max-width: 576px) {
+    .profile-section {
+        padding: 32px 0;
+    }
+    
+    .main-content {
+        padding: 16px;
+    }
+    
+    .form-group input {
+        padding: 10px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+    }
+}
