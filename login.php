@@ -26,9 +26,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $errors[] = "Mot de passe est requis";
     }
     
-
-        
-        // Check for regular user
         $query = "SELECT * FROM CLIENT WHERE email = ?";
         $stmt = mysqli_prepare($conn, $query);
         mysqli_stmt_bind_param($stmt, "s", $email);
