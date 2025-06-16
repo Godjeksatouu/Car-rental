@@ -1,5 +1,13 @@
 <?php
 // Function to check if user is logged in
+if (!function_exists('displayMessage')) {
+    function displayMessage() {
+        if (isset($_SESSION['message'])) {
+            echo '<div class="alert alert-info">' . htmlspecialchars($_SESSION['message']) . '</div>';
+            unset($_SESSION['message']);
+        }
+    }
+}
 function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }

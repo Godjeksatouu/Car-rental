@@ -1,7 +1,7 @@
 <?php
-// Remove the duplicate function declaration
+// Fix the incorrect path to functions.php
 if (!function_exists('displayMessage')) {
-    include_once '../../includes/functions.php';
+include_once __DIR__ . '/../../includes/functions.php';
 }
 ?>
 <header class="admin-header">
