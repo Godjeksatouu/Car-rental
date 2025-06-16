@@ -70,3 +70,38 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('scroll', animateOnScroll);
     animateOnScroll();
 });
+document.getElementById('filter-form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent reload
+
+    const marque = document.getElementById('marque').value.toLowerCase();
+    const type = document.getElementById('type').value.toLowerCase();
+    const prixMin = parseFloat(document.getElementById('prix_min').value) || 0;
+    const prixMax = parseFloat(document.getElementById('prix_max').value) || Infinity;
+
+    const cars = document.querySelectorAll('.car-card');
+
+    let visibleCount = 0;
+
+    cars.forEach(car => {
+        const carMarque = car.dataset.marque.toLowerCase();
+        const carType = car.dataset.type.toLowerCase();
+        const carPrix = parseFloat(car.dataset.prix);
+
+        const matchMarque = !marque || carMarque === marque;
+        const matchType = !type || carType === type;
+        const matchPrix = carPrix >= prixMin && carPrix <= prixMax;
+
+        if (matchMarque && matchType && matchPrix) {
+            car.style.display = 'block';
+            visibleCount++;
+        } else {
+            car.style.display = 'none';
+        }
+    });
+
+    // Update result count (if you want)
+    const countText = document.querySelector('.results-count p');
+    if (countText) {
+        countText.innerHTML = `<i class="fas fa-car"></i> ${visibleCount} voiture(s) trouvée(s)`;
+    }
+});

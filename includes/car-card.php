@@ -1,4 +1,7 @@
-<div class="car-card">
+<div class="car-card"
+     data-marque="<?= htmlspecialchars($car['marque']) ?>"
+     data-type="<?= htmlspecialchars($car['type']) ?>"
+     data-prix="<?= (float)$car['prix_par_jour'] ?>">
     <div class="car-image">
         <?php
         $image = $car['image'] ? $car['image'] : 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';

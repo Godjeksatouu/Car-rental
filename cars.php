@@ -1,58 +1,12 @@
-<?php
+
+ <?php
 session_start();
-include 'includes/config.php';
-include 'includes/functions.php';
+include 'includes/config.php'; // اتصال الداتا بيز
+include 'includes/functions.php'; // أي دوال عندك
 
-// Handle filters
-$whereClause = "WHERE 1=1";
-$params = [];
-$types = "";
-
-if (isset($_GET['marque']) && !empty($_GET['marque'])) {
-    $whereClause .= " AND marque = ?";
-    $params[] = $_GET['marque'];
-    $types .= "s";
-}
-
-if (isset($_GET['type']) && !empty($_GET['type'])) {
-    $whereClause .= " AND type = ?";
-    $params[] = $_GET['type'];
-    $types .= "s";
-}
-
-if (isset($_GET['prix_min']) && !empty($_GET['prix_min'])) {
-    $whereClause .= " AND prix_par_jour >= ?";
-    $params[] = $_GET['prix_min'];
-    $types .= "d";
-}
-
-if (isset($_GET['prix_max']) && !empty($_GET['prix_max'])) {
-    $whereClause .= " AND prix_par_jour <= ?";
-    $params[] = $_GET['prix_max'];
-    $types .= "d";
-}
-
-// Handle sorting
-$orderBy = "ORDER BY prix_par_jour ASC"; // default order
-
-if (isset($_GET['sort'])) {
-    if ($_GET['sort'] == 'price_asc') {
-        $orderBy = "ORDER BY prix_par_jour ASC";
-    } elseif ($_GET['sort'] == 'price_desc') {
-        $orderBy = "ORDER BY prix_par_jour DESC";
-    }
-}
-
-// Prepare the query with filters and sorting
-$query = "SELECT * FROM VOITURE $whereClause $orderBy";
-$stmt = mysqli_prepare($conn, $query);
-
-if (!empty($params)) {
-    mysqli_stmt_bind_param($stmt, $types, ...$params);
-}
-
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+// نجيب كل السيارات من الداتا بيز (بدون فلترة في PHP)
+$query = "SELECT * FROM VOITURE ORDER BY prix_par_jour ASC";
+$result = mysqli_query($conn, $query);
 ?>
 
 <!DOCTYPE html>
@@ -79,7 +33,7 @@ $result = mysqli_stmt_get_result($stmt);
             <div class="cars-content">
                 <div class="filters">
                     <h3><i class="fas fa-filter"></i> Filtres</h3>
-                    <form action="cars.php" method="GET">
+                    <form id="filter-form">
                         <div class="filter-group">
                             <label for="marque">Marque</label>
                             <select name="marque" id="marque">
@@ -88,8 +42,7 @@ $result = mysqli_stmt_get_result($stmt);
                                 $marqueQuery = "SELECT DISTINCT marque FROM VOITURE ORDER BY marque";
                                 $marqueResult = mysqli_query($conn, $marqueQuery);
                                 while ($marque = mysqli_fetch_assoc($marqueResult)) {
-                                    $selected = (isset($_GET['marque']) && $_GET['marque'] == $marque['marque']) ? 'selected' : '';
-                                    echo '<option value="' . htmlspecialchars($marque['marque']) . '" ' . $selected . '>' . htmlspecialchars($marque['marque']) . '</option>';
+                                    echo '<option value="'.htmlspecialchars($marque['marque']).'">'.htmlspecialchars($marque['marque']).'</option>';
                                 }
                                 ?>
                             </select>
@@ -98,43 +51,37 @@ $result = mysqli_stmt_get_result($stmt);
                             <label for="type">Type</label>
                             <select name="type" id="type">
                                 <option value="">Tous les types</option>
-                                <option value="diesel" <?php echo (isset($_GET['type']) && $_GET['type'] == 'diesel') ? 'selected' : ''; ?>>Diesel</option>
-                                <option value="essence" <?php echo (isset($_GET['type']) && $_GET['type'] == 'essence') ? 'selected' : ''; ?>>Essence</option>
-                                <option value="hybride" <?php echo (isset($_GET['type']) && $_GET['type'] == 'hybride') ? 'selected' : ''; ?>>Hybride</option>
-                                <option value="electrique" <?php echo (isset($_GET['type']) && $_GET['type'] == 'electrique') ? 'selected' : ''; ?>>Électrique</option>
+                                <option value="diesel">Diesel</option>
+                                <option value="essence">Essence</option>
+                                <option value="hybride">Hybride</option>
+                                <option value="electrique">Électrique</option>
                             </select>
                         </div>
                         <div class="filter-group">
                             <label for="prix_min">Prix minimum (€/jour)</label>
-                            <input type="number" name="prix_min" id="prix_min" min="0" value="<?php echo htmlspecialchars($_GET['prix_min'] ?? ''); ?>" />
+                            <input type="number" id="prix_min" name="prix_min" min="0" />
                         </div>
                         <div class="filter-group">
                             <label for="prix_max">Prix maximum (€/jour)</label>
-                            <input type="number" name="prix_max" id="prix_max" min="0" value="<?php echo htmlspecialchars($_GET['prix_max'] ?? ''); ?>" />
+                            <input type="number" id="prix_max" name="prix_max" min="0" />
                         </div>
                         <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
-                        <a href="cars.php" class="btn btn-outline">Réinitialiser</a>
+                        <button type="button" id="reset-filters" class="btn btn-outline">Réinitialiser</button>
                     </form>
                 </div>
 
                 <div class="cars-list">
                     <div class="results-count">
-                        <p><i class="fas fa-car"></i> <?php echo mysqli_num_rows($result); ?> voiture(s) trouvée(s)</p>
-                        <div class="sort-options">
-                            <span>Trier par:</span>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price_asc'])); ?>" class="<?php echo (isset($_GET['sort']) && $_GET['sort'] == 'price_asc') ? 'active' : ''; ?>">Prix croissant</a>
-                            <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price_desc'])); ?>" class="<?php echo (isset($_GET['sort']) && $_GET['sort'] == 'price_desc') ? 'active' : ''; ?>">Prix décroissant</a>
-                        </div>
+                        <p><i class="fas fa-car"></i> <span id="cars-count"><?php echo mysqli_num_rows($result); ?></span> voiture(s) trouvée(s)</p>
                     </div>
-
-                    <div class="cars-grid">
+                    <div class="cars-grid" id="cars-grid">
                         <?php
                         if (mysqli_num_rows($result) > 0) {
                             while ($car = mysqli_fetch_assoc($result)) {
-                                include 'includes/car-card.php';
+                                include 'includes/car-card.php';  // تأكد أن car-card.php يستقبل $car ويعطي data-* attributes كما في الرد السابق
                             }
                         } else {
-                            echo '<div class="no-results"><i class="fas fa-search"></i> Aucune voiture ne correspond à vos critères.</div>';
+                            echo '<div class="no-results"><i class="fas fa-search"></i>Aucune voiture disponible.</div>';
                         }
                         ?>
                     </div>
@@ -144,6 +91,15 @@ $result = mysqli_stmt_get_result($stmt);
     </section>
 
     <?php include 'includes/footer.php'; ?>
-    <script src="assets/js/main.js"></script>
+
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+     <script src="assets/js/main.js"></script>  <!-- ملف جافاسكريبت اللي درناه للفيلتر -->
+    <script>
+        // Reset filter button behavior
+        document.getElementById('reset-filters').addEventListener('click', () => {
+            document.getElementById('filter-form').reset();
+            document.getElementById('filter-form').dispatchEvent(new Event('submit'));
+        });
+    </script>
 </body>
 </html>
