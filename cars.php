@@ -1,22 +1,30 @@
 
- <?php
+<?php
 session_start();
-include 'includes/config.php'; // اتصال الداتا بيز
-include 'includes/functions.php'; // أي دوال عندك
+include 'includes/config.php';
+include 'includes/functions.php';
 
-// نجيب كل السيارات من الداتا بيز (بدون فلترة في PHP)
-$query = "SELECT * FROM VOITURE ORDER BY prix_par_jour ASC";
+// Simple query to get all cars - no filters for now
+$query = "SELECT * FROM voiture ORDER BY prix_par_jour ASC";
 $result = mysqli_query($conn, $query);
+
+// Check if query was successful
+if (!$result) {
+    echo "Error: " . mysqli_error($conn);
+}
+
+// Count the number of cars
+$carCount = $result ? mysqli_num_rows($result) : 0;
 ?>
 
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nos Voitures - AutoDrive</title>
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -33,16 +41,18 @@ $result = mysqli_query($conn, $query);
             <div class="cars-content">
                 <div class="filters">
                     <h3><i class="fas fa-filter"></i> Filtres</h3>
-                    <form id="filter-form">
+                    <form action="cars.php" method="GET">
                         <div class="filter-group">
                             <label for="marque">Marque</label>
                             <select name="marque" id="marque">
                                 <option value="">Toutes les marques</option>
                                 <?php
-                                $marqueQuery = "SELECT DISTINCT marque FROM VOITURE ORDER BY marque";
+                                $marqueQuery = "SELECT DISTINCT marque FROM voiture ORDER BY marque";
                                 $marqueResult = mysqli_query($conn, $marqueQuery);
-                                while ($marque = mysqli_fetch_assoc($marqueResult)) {
-                                    echo '<option value="'.htmlspecialchars($marque['marque']).'">'.htmlspecialchars($marque['marque']).'</option>';
+                                if ($marqueResult) {
+                                    while ($marque = mysqli_fetch_assoc($marqueResult)) {
+                                        echo '<option value="' . htmlspecialchars($marque['marque']) . '">' . htmlspecialchars($marque['marque']) . '</option>';
+                                    }
                                 }
                                 ?>
                             </select>
@@ -53,35 +63,76 @@ $result = mysqli_query($conn, $query);
                                 <option value="">Tous les types</option>
                                 <option value="diesel">Diesel</option>
                                 <option value="essence">Essence</option>
-                                <option value="hybride">Hybride</option>
-                                <option value="electrique">Électrique</option>
                             </select>
                         </div>
                         <div class="filter-group">
                             <label for="prix_min">Prix minimum (€/jour)</label>
-                            <input type="number" id="prix_min" name="prix_min" min="0" />
+                            <input type="number" name="prix_min" id="prix_min" min="0">
                         </div>
                         <div class="filter-group">
                             <label for="prix_max">Prix maximum (€/jour)</label>
-                            <input type="number" id="prix_max" name="prix_max" min="0" />
+                            <input type="number" name="prix_max" id="prix_max" min="0">
                         </div>
                         <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
-                        <button type="button" id="reset-filters" class="btn btn-outline">Réinitialiser</button>
+                        <a href="cars.php" class="btn btn-outline">Réinitialiser</a>
                     </form>
                 </div>
 
                 <div class="cars-list">
                     <div class="results-count">
-                        <p><i class="fas fa-car"></i> <span id="cars-count"><?php echo mysqli_num_rows($result); ?></span> voiture(s) trouvée(s)</p>
+                        <p><i class="fas fa-car"></i> <?php echo $carCount; ?> voiture(s) trouvée(s)</p>
                     </div>
+
                     <div class="cars-grid" id="cars-grid">
                         <?php
-                        if (mysqli_num_rows($result) > 0) {
+                        if ($result && mysqli_num_rows($result) > 0) {
                             while ($car = mysqli_fetch_assoc($result)) {
-                                include 'includes/car-card.php';  // تأكد أن car-card.php يستقبل $car ويعطي data-* attributes كما في الرد السابق
+                                ?>
+                                <div class="car-card" 
+                                     data-marque="<?php echo htmlspecialchars($car['marque']); ?>" 
+                                     data-type="<?php echo htmlspecialchars($car['type']); ?>" 
+                                     data-prix="<?php echo (float)$car['prix_par_jour']; ?>">
+                                    <div class="car-image">
+                                        <?php
+                                        $image = $car['image'] && $car['image'] != '0' ? $car['image'] : 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+                                        ?>
+                                        <img src="<?php echo $image; ?>" alt="<?php echo $car['marque'] . ' ' . $car['modele']; ?>">
+                                        <div class="car-status <?php echo $car['statut']; ?>"><?php echo ucfirst($car['statut']); ?></div>
+                                    </div>
+                                    <div class="car-info">
+                                        <div class="car-title">
+                                            <h3><?php echo $car['marque'] . ' ' . $car['modele']; ?></h3>
+                                            <p class="car-immatriculation"><?php echo $car['immatriculation']; ?></p>
+                                        </div>
+                                        <div class="car-features">
+                                            <div class="feature">
+                                                <i class="fas fa-gas-pump"></i>
+                                                <span><?php echo ucfirst($car['type']); ?></span>
+                                            </div>
+                                            <div class="feature">
+                                                <i class="fas fa-users"></i>
+                                                <span><?php echo $car['nb_places']; ?> places</span>
+                                            </div>
+                                            <div class="feature">
+                                                <i class="fas fa-tachometer-alt"></i>
+                                                <span><?php echo ucfirst($car['type']); ?></span>
+                                            </div>
+                                        </div>
+                                        <div class="car-price">
+                                            <div class="price-tag">
+                                                <span class="price"><?php echo $car['prix_par_jour']; ?> €</span>
+                                                <span class="period">/ jour</span>
+                                            </div>
+                                            <a href="reservation.php?id=<?php echo $car['id_voiture']; ?>" class="btn btn-success">
+                                                <i class="fas fa-calendar-check"></i> Réserver
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <?php
                             }
                         } else {
-                            echo '<div class="no-results"><i class="fas fa-search"></i>Aucune voiture disponible.</div>';
+                            echo '<div class="no-results"><i class="fas fa-search"></i> Aucune voiture disponible.</div>';
                         }
                         ?>
                     </div>
@@ -91,9 +142,8 @@ $result = mysqli_query($conn, $query);
     </section>
 
     <?php include 'includes/footer.php'; ?>
-
-    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
-     <script src="assets/js/main.js"></script>  <!-- ملف جافاسكريبت اللي درناه للفيلتر -->
+    
+    <script src="assets/js/main.js"></script>
     <script>
         // Reset filter button behavior
         document.getElementById('reset-filters').addEventListener('click', () => {
