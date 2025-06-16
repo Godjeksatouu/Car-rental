@@ -1,3 +1,14 @@
+<?php
+function displayMessage() {
+    if (isset($_SESSION['message'])) {
+        echo '<div class="alert alert-info">' . htmlspecialchars($_SESSION['message']) . '</div>';
+        unset($_SESSION['message']);
+    }
+    }
+if (!function_exists('displayMessage')) {
+    include_once '../../includes/functions.php';
+}
+?>
 <header class="admin-header">
     <div class="container">
         <div class="admin-logo">
