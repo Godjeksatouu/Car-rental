@@ -3,64 +3,55 @@ session_start();
 include '../includes/config.php';
 include '../includes/functions.php';
 
-// Check if user is admin
+// Redirect if not admin
 if (!isAdmin()) {
     header("Location: ../login.php");
     exit();
 }
 
-// Handle form submission
 $success = false;
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
-    $marque = mysqli_real_escape_string($conn, $_POST['marque']);
-    $modele = mysqli_real_escape_string($conn, $_POST['modele']);
-    $immatriculation = mysqli_real_escape_string($conn, $_POST['immatriculation']);
-    $type = mysqli_real_escape_string($conn, $_POST['type']);
-    $nb_places = (int)$_POST['nb_places'];
-    $prix_par_jour = (float)$_POST['prix_par_jour'];
-    $statut = mysqli_real_escape_string($conn, $_POST['statut']);
-    $image = mysqli_real_escape_string($conn, $_POST['image']);
+    // Sanitize and validate input
+    $marque = trim($_POST['marque'] ?? '');
+    $modele = trim($_POST['modele'] ?? '');
+    $immatriculation = trim($_POST['immatriculation'] ?? '');
+    $type = trim($_POST['type'] ?? '');
+    $nb_places = (int)($_POST['nb_places'] ?? 0);
+    $prix_par_jour = (float)($_POST['prix_par_jour'] ?? 0);
+    $statut = trim($_POST['statut'] ?? 'disponible');
+    $image = trim($_POST['image'] ?? '');
 
-    // Validate required fields
-    if (empty($marque) || empty($modele) || empty($immatriculation) || empty($type) || empty($nb_places) || empty($prix_par_jour)) {
-        $error = "Tous les champs obligatoires doivent être remplis";
+    if (!$marque || !$modele || !$immatriculation || !$type || !$nb_places || !$prix_par_jour) {
+        $error = "Tous les champs obligatoires doivent être remplis.";
     } else {
-        // Insert into database
-        $query = "INSERT INTO VOITURE (marque, modele, immatriculation, type, nb_places, prix_par_jour, statut, image) 
-                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-
+        $query = "INSERT INTO VOITURE (marque, modele, immatriculation, type, nb_places, prix_par_jour, statut, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($conn, $query);
-        if ($stmt === false) {
-            die('Erreur f prepare: ' . mysqli_error($conn));
-        }
-
-        mysqli_stmt_bind_param($stmt, "ssssidsi", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $image);
-
-        if (mysqli_stmt_execute($stmt)) {
-            $success = true;
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ssssidss", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $image);
+            if (mysqli_stmt_execute($stmt)) {
+                $success = true;
+            } else {
+                $error = "Erreur lors de l'ajout: " . mysqli_error($conn);
+            }
         } else {
-            $error = "Erreur lors de l'ajout de la voiture: " . mysqli_error($conn);
+            $error = "Erreur de préparation de la requête.";
         }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ajouter une voiture - Administration</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="admin-body">
+<body>
     <?php include 'includes/admin-header.php'; ?>
-
-    <section class="admin-dashboard">
+    <main class="admin-dashboard">
         <div class="container">
             <div class="admin-card">
                 <div class="admin-card-header">
@@ -69,19 +60,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="admin-card-body">
                     <?php if ($success): ?>
-                        <div class="alert alert-success">
-                            La voiture a été ajoutée avec succès.
-                            <a href="cars.php" class="btn btn-sm btn-primary">Retour à la liste</a>
-                        </div>
+                        <div class="alert alert-success">Voiture ajoutée avec succès.</div>
+                    <?php elseif ($error): ?>
+                        <div class="alert alert-error"><?php echo htmlspecialchars($error); ?></div>
                     <?php endif; ?>
-
-                    <?php if ($error): ?>
-                        <div class="alert alert-error">
-                            <?php echo $error; ?>
-                        </div>
-                    <?php endif; ?>
-
-                    <form action="add-car.php" method="post" class="admin-form">
+                    <form action="" method="post" class="admin-form">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="marque">Marque*</label>
@@ -92,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" id="modele" name="modele" required>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="immatriculation">Immatriculation*</label>
@@ -109,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </select>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="nb_places">Nombre de places*</label>
@@ -120,7 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="prix_par_jour" name="prix_par_jour" min="0" step="0.01" required>
                             </div>
                         </div>
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="statut">Statut</label>
@@ -136,7 +116,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <small>Laissez vide pour utiliser l'image par défaut</small>
                             </div>
                         </div>
-
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary">Ajouter la voiture</button>
                             <a href="cars.php" class="btn btn-outline">Annuler</a>
@@ -145,9 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
         </div>
-    </section>
-
+    </main>
     <?php include 'includes/admin-footer.php'; ?>
-    <script src="../assets/js/main.js"></script>
+    <script src="../assets/js/main.js" defer></script>
 </body>
 </html>

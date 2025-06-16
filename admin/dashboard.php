@@ -173,7 +173,7 @@ while ($row = mysqli_fetch_assoc($carsStatus)) {
                                 <div class="quick-actions">
                                     <h3>Actions rapides</h3>
                                     <div class="action-buttons">
-                                        <a href="add-car.php" class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter une voiture</a>
+                                        <a href="add-cars.php" class="btn btn-primary"><i class="fas fa-plus"></i> Ajouter une voiture</a>
                                         <a href="maintenance.php" class="btn btn-warning"><i class="fas fa-tools"></i> Maintenance</a>
                                     </div>
                                 </div>
@@ -236,6 +236,7 @@ while ($row = mysqli_fetch_assoc($carsStatus)) {
             </div>
         </div>
     </section>
+    
 
     <?php include 'includes/admin-footer.php'; ?>
     <script src="../assets/js/main.js"></script>
