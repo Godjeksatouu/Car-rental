@@ -1,10 +1,5 @@
 <?php
-function displayMessage() {
-    if (isset($_SESSION['message'])) {
-        echo '<div class="alert alert-info">' . htmlspecialchars($_SESSION['message']) . '</div>';
-        unset($_SESSION['message']);
-    }
-    }
+// Remove the duplicate function declaration
 if (!function_exists('displayMessage')) {
     include_once '../../includes/functions.php';
 }
