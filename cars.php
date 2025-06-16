@@ -32,8 +32,19 @@ if (isset($_GET['prix_max']) && !empty($_GET['prix_max'])) {
     $types .= "d";
 }
 
-// Prepare the query
-$query = "SELECT * FROM VOITURE $whereClause ORDER BY prix_par_jour ASC";
+// Handle sorting
+$orderBy = "ORDER BY prix_par_jour ASC"; // default order
+
+if (isset($_GET['sort'])) {
+    if ($_GET['sort'] == 'price_asc') {
+        $orderBy = "ORDER BY prix_par_jour ASC";
+    } elseif ($_GET['sort'] == 'price_desc') {
+        $orderBy = "ORDER BY prix_par_jour DESC";
+    }
+}
+
+// Prepare the query with filters and sorting
+$query = "SELECT * FROM VOITURE $whereClause $orderBy";
 $stmt = mysqli_prepare($conn, $query);
 
 if (!empty($params)) {
@@ -47,11 +58,11 @@ $result = mysqli_stmt_get_result($stmt);
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Nos Voitures - AutoDrive</title>
-    <link rel="stylesheet" href="assets/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -78,7 +89,7 @@ $result = mysqli_stmt_get_result($stmt);
                                 $marqueResult = mysqli_query($conn, $marqueQuery);
                                 while ($marque = mysqli_fetch_assoc($marqueResult)) {
                                     $selected = (isset($_GET['marque']) && $_GET['marque'] == $marque['marque']) ? 'selected' : '';
-                                    echo '<option value="'.$marque['marque'].'" '.$selected.'>'.$marque['marque'].'</option>';
+                                    echo '<option value="' . htmlspecialchars($marque['marque']) . '" ' . $selected . '>' . htmlspecialchars($marque['marque']) . '</option>';
                                 }
                                 ?>
                             </select>
@@ -95,16 +106,17 @@ $result = mysqli_stmt_get_result($stmt);
                         </div>
                         <div class="filter-group">
                             <label for="prix_min">Prix minimum (€/jour)</label>
-                            <input type="number" name="prix_min" id="prix_min" min="0" value="<?php echo $_GET['prix_min'] ?? ''; ?>">
+                            <input type="number" name="prix_min" id="prix_min" min="0" value="<?php echo htmlspecialchars($_GET['prix_min'] ?? ''); ?>" />
                         </div>
                         <div class="filter-group">
                             <label for="prix_max">Prix maximum (€/jour)</label>
-                            <input type="number" name="prix_max" id="prix_max" min="0" value="<?php echo $_GET['prix_max'] ?? ''; ?>">
+                            <input type="number" name="prix_max" id="prix_max" min="0" value="<?php echo htmlspecialchars($_GET['prix_max'] ?? ''); ?>" />
                         </div>
                         <button type="submit" class="btn btn-primary">Appliquer les filtres</button>
                         <a href="cars.php" class="btn btn-outline">Réinitialiser</a>
                     </form>
                 </div>
+
                 <div class="cars-list">
                     <div class="results-count">
                         <p><i class="fas fa-car"></i> <?php echo mysqli_num_rows($result); ?> voiture(s) trouvée(s)</p>
@@ -114,6 +126,7 @@ $result = mysqli_stmt_get_result($stmt);
                             <a href="?<?php echo http_build_query(array_merge($_GET, ['sort' => 'price_desc'])); ?>" class="<?php echo (isset($_GET['sort']) && $_GET['sort'] == 'price_desc') ? 'active' : ''; ?>">Prix décroissant</a>
                         </div>
                     </div>
+
                     <div class="cars-grid">
                         <?php
                         if (mysqli_num_rows($result) > 0) {
@@ -121,7 +134,7 @@ $result = mysqli_stmt_get_result($stmt);
                                 include 'includes/car-card.php';
                             }
                         } else {
-                            echo '<div class="no-results"><i class="fas fa-search"></i>Aucune voiture ne correspond à vos critères.</div>';
+                            echo '<div class="no-results"><i class="fas fa-search"></i> Aucune voiture ne correspond à vos critères.</div>';
                         }
                         ?>
                     </div>
