@@ -128,9 +128,23 @@ $reservations = mysqli_stmt_get_result($stmt);
                                     </div>
                                     <div class="reservation-actions">
                                         <?php if (!$reservation['ETAT_PAIEMENT'] && $reservation['date_debut'] > $today): ?>
-                                            <a href="payment.php?id=<?php echo $reservation['id_location']; ?>" class="btn btn-primary">Payer maintenant</a>
+                                            <a href="payment.php?id=<?php echo $reservation['id_location']; ?>" class="btn btn-primary">
+                                                <i class="fas fa-credit-card"></i> Payer maintenant
+                                            </a>
                                         <?php endif; ?>
-                                        <a href="reservation-details.php?id=<?php echo $reservation['id_reservation']; ?>" class="btn btn-outline">Voir détails</a>
+                                        <a href="reservation-details.php?id=<?php echo $reservation['id_reservation']; ?>" class="btn btn-outline">
+                                            <i class="fas fa-eye"></i> Voir détails
+                                        </a>
+                                        <?php
+                                        // Allow deletion if not paid and not started
+                                        if (!$reservation['ETAT_PAIEMENT'] && $reservation['date_debut'] > $today):
+                                        ?>
+                                            <a href="delete-reservation.php?id=<?php echo $reservation['id_reservation']; ?>"
+                                               class="btn btn-danger"
+                                               onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')">
+                                                <i class="fas fa-trash"></i> Supprimer
+                                            </a>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
                             <?php endwhile; ?>

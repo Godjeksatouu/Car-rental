@@ -68,24 +68,40 @@ if ($action === 'mark_paid') {
     foreach ($ids as $reservationId) {
         // Start transaction for each deletion
         mysqli_begin_transaction($conn);
-        
+
         try {
+            // Get car ID first to update its status
+            $get_car = "SELECT id_voiture FROM RESERVATION WHERE id_reservation = ?";
+            $stmt = mysqli_prepare($conn, $get_car);
+            mysqli_stmt_bind_param($stmt, "i", $reservationId);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $car_data = mysqli_fetch_assoc($result);
+
             // Delete from LOCATION first (foreign key constraint)
             $delete_location = "DELETE FROM LOCATION WHERE id_reservation = ?";
             $stmt = mysqli_prepare($conn, $delete_location);
             mysqli_stmt_bind_param($stmt, "i", $reservationId);
             mysqli_stmt_execute($stmt);
-            
+
+            // Update car status back to available
+            if ($car_data) {
+                $update_car = "UPDATE VOITURE SET statut = 'disponible' WHERE id_voiture = ?";
+                $stmt = mysqli_prepare($conn, $update_car);
+                mysqli_stmt_bind_param($stmt, "i", $car_data['id_voiture']);
+                mysqli_stmt_execute($stmt);
+            }
+
             // Delete from RESERVATION
             $delete_reservation = "DELETE FROM RESERVATION WHERE id_reservation = ?";
             $stmt = mysqli_prepare($conn, $delete_reservation);
             mysqli_stmt_bind_param($stmt, "i", $reservationId);
             mysqli_stmt_execute($stmt);
-            
+
             // Commit transaction
             mysqli_commit($conn);
             $success_count++;
-            
+
         } catch (Exception $e) {
             // Rollback transaction
             mysqli_rollback($conn);

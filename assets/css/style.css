@@ -1835,6 +1835,244 @@ footer {
         font-size: 1rem;
     }
 }
+
+/* Delete Reservation Page Styles */
+.delete-section {
+    padding: 64px 0;
+    background: var(--gray-50);
+    min-height: calc(100vh - 200px);
+}
+
+.delete-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.delete-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.delete-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: var(--white);
+    padding: 32px;
+    text-align: center;
+}
+
+.delete-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.delete-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+.reservation-details {
+    padding: 32px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.reservation-details h3 {
+    font-size: 1.25rem;
+    margin-bottom: 24px;
+    color: var(--gray-800);
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--primary-color);
+}
+
+.detail-item .label {
+    font-size: 0.9rem;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.detail-item .value {
+    font-weight: 600;
+    color: var(--gray-800);
+}
+
+.warning-message {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    margin: 32px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    color: #856404;
+}
+
+.warning-message i {
+    font-size: 1.5rem;
+    color: #ffc107;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.warning-message h4 {
+    margin: 0 0 8px 0;
+    color: #856404;
+}
+
+.warning-message p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.cannot-delete {
+    background: rgba(220, 53, 69, 0.1);
+    border: 1px solid rgba(220, 53, 69, 0.3);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    margin: 32px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    color: #721c24;
+}
+
+.cannot-delete i {
+    font-size: 1.5rem;
+    color: #dc3545;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.cannot-delete h4 {
+    margin: 0 0 8px 0;
+    color: #721c24;
+}
+
+.cannot-delete p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+.delete-form {
+    padding: 32px;
+}
+
+.delete-form .form-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: var(--white);
+    border: 1px solid #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    border-color: #bd2130;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-danger:active {
+    background: #bd2130;
+    border-color: #b21f2d;
+    transform: translateY(0);
+}
+
+/* Enhanced reservation actions */
+.reservation-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.reservation-actions .btn {
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    padding: 10px 16px;
+}
+
+.reservation-actions .btn i {
+    font-size: 0.8rem;
+}
+
+/* Responsive Design for Delete Page */
+@media (max-width: 768px) {
+    .delete-section {
+        padding: 32px 0;
+    }
+
+    .delete-header {
+        padding: 24px 16px;
+    }
+
+    .delete-header h2 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .reservation-details {
+        padding: 24px 16px;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .warning-message,
+    .cannot-delete {
+        margin: 16px;
+        padding: 16px;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .delete-form {
+        padding: 24px 16px;
+    }
+
+    .delete-form .form-actions {
+        flex-direction: column;
+    }
+
+    .reservation-actions {
+        flex-direction: column;
+    }
+
+    .reservation-actions .btn {
+        min-width: auto;
+    }
+}
 .auth-section {
     padding: 64px 0;
     display: flex;
