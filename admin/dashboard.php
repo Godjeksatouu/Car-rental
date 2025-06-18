@@ -98,7 +98,7 @@ while ($row = mysqli_fetch_assoc($carsStatus)) {
                 <div class="admin-card">
                     <div class="admin-card-header">
                         <h2>Réservations récentes</h2>
-                        <a href="reservations.php" class="btn btn-primary">Voir toutes</a>
+                        <!-- <a href="reservations.php" class="btn btn-primary">Voir toutes</a> -->
                     </div>
                     <div class="admin-card-body">
                         <div class="table-responsive">
