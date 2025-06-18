@@ -25,27 +25,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($password)) {
         $errors[] = "Mot de passe est requis";
     }
-    
+
+    // If no validation errors, attempt login
+    if (empty($errors)) {
         $query = "SELECT * FROM CLIENT WHERE email = ?";
         $stmt = mysqli_prepare($conn, $query);
         mysqli_stmt_bind_param($stmt, "s", $email);
         mysqli_stmt_execute($stmt);
         $result = mysqli_stmt_get_result($stmt);
-        
+
         if ($user = mysqli_fetch_assoc($result)) {
             // Verify password using password_verify
             if (isset($user['mot_de_passe']) && password_verify($password, $user['mot_de_passe'])) {
                 $_SESSION['user_id'] = $user['id_client'];
-                
+
                 // Redirect to requested page or homepage
                 $redirect = isset($_GET['redirect']) ? $_GET['redirect'] : 'index.php';
                 header("Location: $redirect");
                 exit();
             }
         }
-        
+
         $errors[] = "Email ou mot de passe incorrect";
     }
+}
 
 ?>
 

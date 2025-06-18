@@ -21,15 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nb_places = (int)($_POST['nb_places'] ?? 0);
     $prix_par_jour = (float)($_POST['prix_par_jour'] ?? 0);
     $statut = trim($_POST['statut'] ?? 'disponible');
+    $gear = trim($_POST['gear'] ?? 'manuel');
     $image = trim($_POST['image'] ?? '');
 
-    if (!$marque || !$modele || !$immatriculation || !$type || !$nb_places || !$prix_par_jour) {
+    if (!$marque || !$modele || !$immatriculation || !$type || !$nb_places || !$prix_par_jour || !$gear) {
         $error = "Tous les champs obligatoires doivent être remplis.";
     } else {
-        $query = "INSERT INTO VOITURE (marque, modele, immatriculation, type, nb_places, prix_par_jour, statut, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO VOITURE (marque, modele, immatriculation, type, nb_places, prix_par_jour, statut, gear, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = mysqli_prepare($conn, $query);
         if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "ssssidss", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $image);
+            mysqli_stmt_bind_param($stmt, "ssssidsss", $marque, $modele, $immatriculation, $type, $nb_places, $prix_par_jour, $statut, $gear, $image);
             if (mysqli_stmt_execute($stmt)) {
                 $success = true;
             } else {
@@ -110,6 +111,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="maintenance">En maintenance</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label for="gear">Boîte de vitesses*</label>
+                                <select id="gear" name="gear" required>
+                                    <option value="">Sélectionner une boîte</option>
+                                    <option value="manuel">Manuel</option>
+                                    <option value="automatique">Automatique</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
                             <div class="form-group">
                                 <label for="image">URL de l'image</label>
                                 <input type="url" id="image" name="image" placeholder="https://example.com/image.jpg">

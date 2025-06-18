@@ -18,7 +18,7 @@ unset($query, $result, $stmt);
 // Initialize filter variables with better validation
 $car_marque_filter = isset($_GET['marque']) && !empty(trim($_GET['marque'])) ? trim($_GET['marque']) : '';
 $car_type_filter = isset($_GET['type']) && !empty(trim($_GET['type'])) ? trim($_GET['type']) : '';
-$car_statut_filter = isset($_GET['statut']) && !empty(trim($_GET['statut'])) ? trim($_GET['statut']) : '';
+$car_gear_filter = isset($_GET['gear']) && !empty(trim($_GET['gear'])) ? trim($_GET['gear']) : '';
 $car_prix_min = isset($_GET['prix_min']) && is_numeric($_GET['prix_min']) && $_GET['prix_min'] > 0 ? (float)$_GET['prix_min'] : 0;
 $car_prix_max = isset($_GET['prix_max']) && is_numeric($_GET['prix_max']) && $_GET['prix_max'] > 0 ? (float)$_GET['prix_max'] : 0;
 $car_nb_places_filter = isset($_GET['nb_places']) && !empty(trim($_GET['nb_places'])) ? (int)trim($_GET['nb_places']) : 0;
@@ -40,9 +40,9 @@ if (!empty($car_type_filter)) {
     $car_param_types .= 's';
 }
 
-if (!empty($car_statut_filter)) {
-    $car_where_conditions[] = "statut = ?";
-    $car_params[] = $car_statut_filter;
+if (!empty($car_gear_filter)) {
+    $car_where_conditions[] = "gear = ?";
+    $car_params[] = $car_gear_filter;
     $car_param_types .= 's';
 }
 
@@ -65,7 +65,7 @@ if ($car_nb_places_filter > 0) {
 }
 
 // Build the complete query
-$car_query = "SELECT id_voiture, marque, modele, immatriculation, type, carburant, image, nb_places, statut, prix_par_jour FROM voiture";
+$car_query = "SELECT id_voiture, marque, modele, immatriculation, type, carburant, image, nb_places, statut, prix_par_jour, gear FROM voiture";
 
 if (!empty($car_where_conditions)) {
     $car_query .= " WHERE " . implode(" AND ", $car_where_conditions);
@@ -118,8 +118,8 @@ $marques_result = mysqli_query($conn, $marques_query);
 $types_query = "SELECT DISTINCT type FROM voiture WHERE type IS NOT NULL AND type != '' ORDER BY type";
 $types_result = mysqli_query($conn, $types_query);
 
-$statuts_query = "SELECT DISTINCT statut FROM voiture WHERE statut IS NOT NULL AND statut != '' ORDER BY statut";
-$statuts_result = mysqli_query($conn, $statuts_query);
+$gears_query = "SELECT DISTINCT gear FROM voiture WHERE gear IS NOT NULL AND gear != '' ORDER BY gear";
+$gears_result = mysqli_query($conn, $gears_query);
 
 $places_query = "SELECT DISTINCT nb_places FROM voiture WHERE nb_places IS NOT NULL AND nb_places > 0 ORDER BY nb_places";
 $places_result = mysqli_query($conn, $places_query);
@@ -128,7 +128,7 @@ $places_result = mysqli_query($conn, $places_query);
 echo "<!-- CAR Debug: Connected to database successfully -->";
 echo "<!-- CAR Debug: Query: " . $car_query . " -->";
 echo "<!-- CAR Debug: Found " . $carCount . " cars -->";
-echo "<!-- CAR Debug: Active filters - Marque: '" . $car_marque_filter . "', Type: '" . $car_type_filter . "', Statut: '" . $car_statut_filter . "', Prix: " . $car_prix_min . "-" . $car_prix_max . ", Places: " . $car_nb_places_filter . " -->";
+echo "<!-- CAR Debug: Active filters - Marque: '" . $car_marque_filter . "', Type: '" . $car_type_filter . "', Gear: '" . $car_gear_filter . "', Prix: " . $car_prix_min . "-" . $car_prix_max . ", Places: " . $car_nb_places_filter . " -->";
 
 // Test query without filters to see total cars
 $total_cars_query = "SELECT COUNT(*) as total FROM voiture";
@@ -500,14 +500,14 @@ if ($sample_data_result) {
                         </div>
 
                         <div class="filter-group">
-                            <label for="statut">Statut</label>
-                            <select name="statut" id="statut">
-                                <option value="">Tous les statuts</option>
+                            <label for="gear">Boîte de vitesses</label>
+                            <select name="gear" id="gear">
+                                <option value="">Toutes les boîtes</option>
                                 <?php
-                                if ($statuts_result && mysqli_num_rows($statuts_result) > 0) {
-                                    while ($statut = mysqli_fetch_assoc($statuts_result)) {
-                                        $selected = ($statut_filter === $statut['statut']) ? 'selected' : '';
-                                        echo '<option value="' . htmlspecialchars($statut['statut']) . '" ' . $selected . '>' . ucfirst($statut['statut']) . '</option>';
+                                if ($gears_result && mysqli_num_rows($gears_result) > 0) {
+                                    while ($gear = mysqli_fetch_assoc($gears_result)) {
+                                        $selected = ($car_gear_filter === $gear['gear']) ? 'selected' : '';
+                                        echo '<option value="' . htmlspecialchars($gear['gear']) . '" ' . $selected . '>' . ucfirst($gear['gear']) . '</option>';
                                     }
                                 }
                                 ?>
@@ -558,14 +558,14 @@ if ($sample_data_result) {
             <!-- Results Section -->
             <div class="results-count">
                 <p><i class="fas fa-car"></i> <?php echo $carCount; ?> voiture(s) trouvée(s)</p>
-                <?php if (!empty($car_marque_filter) || !empty($car_type_filter) || !empty($car_statut_filter) || $car_prix_min > 0 || $car_prix_max > 0 || $car_nb_places_filter > 0): ?>
+                <?php if (!empty($car_marque_filter) || !empty($car_type_filter) || !empty($car_gear_filter) || $car_prix_min > 0 || $car_prix_max > 0 || $car_nb_places_filter > 0): ?>
                     <p class="active-filters">
                         <i class="fas fa-filter"></i> Filtres actifs:
                         <?php
                         $active_filters = [];
                         if (!empty($car_marque_filter)) $active_filters[] = "Marque: $car_marque_filter";
                         if (!empty($car_type_filter)) $active_filters[] = "Type: $car_type_filter";
-                        if (!empty($car_statut_filter)) $active_filters[] = "Statut: $car_statut_filter";
+                        if (!empty($car_gear_filter)) $active_filters[] = "Boîte: $car_gear_filter";
                         if ($car_prix_min > 0) $active_filters[] = "Prix min: {$car_prix_min}€";
                         if ($car_prix_max > 0) $active_filters[] = "Prix max: {$car_prix_max}€";
                         if ($car_nb_places_filter > 0) $active_filters[] = "Places: $car_nb_places_filter";
@@ -628,8 +628,8 @@ if ($sample_data_result) {
                                         <span><?php echo ($car['nb_places'] ?? 0); ?> places</span>
                                     </div>
                                     <div class="feature">
-                                        <i class="fas fa-tachometer-alt"></i>
-                                        <span><?php echo ucfirst($car['type'] ?? ''); ?></span>
+                                        <i class="fas fa-cogs"></i>
+                                        <span><?php echo ucfirst($car['gear'] ?? 'Manuel'); ?></span>
                                     </div>
                                 </div>
 

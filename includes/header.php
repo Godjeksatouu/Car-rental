@@ -29,7 +29,7 @@
                     </button>
                     <div class="dropdown-content">
                         <a href="profile.php"><i class="fas fa-user"></i> Mon Profil</a>
-                        <a href="reservations.php"><i class="fas fa-calendar-alt"></i> Mes Réservations</a>
+                        <a href="profile.php#reservations"><i class="fas fa-calendar-alt"></i> Mes Réservations</a>
                         <?php if (isAdmin()): ?>
                             <a href="admin/dashboard.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                         <?php endif; ?>
@@ -54,7 +54,7 @@
         <li><a href="about.php">À Propos</a></li>
         <?php if (isLoggedIn()): ?>
             <li><a href="profile.php">Mon Profil</a></li>
-            <li><a href="reservations.php">Mes Réservations</a></li>
+            <li><a href="profile.php#reservations">Mes Réservations</a></li>
             <?php if (isAdmin()): ?>
                 <li><a href="admin/dashboard.php">Dashboard</a></li>
             <?php endif; ?>
