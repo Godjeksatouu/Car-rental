@@ -117,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // Commit transaction
             mysqli_commit($conn);
             
-            redirectWithMessage('reservations.php', 'Votre réservation a été enregistrée avec succès', 'success');
+            redirectWithMessage('profile.php', 'Votre réservation a été enregistrée avec succès', 'success');
         } catch (Exception $e) {
             // Rollback transaction
             mysqli_rollback($conn);
@@ -238,7 +238,7 @@ if (!empty($dateDebut) && !empty($dateFin)) {
                         
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary btn-block">Confirmer la réservation</button>
-                            <a href="car-details.php?id=<?php echo $carId; ?>" class="btn btn-outline btn-block">Retour aux détails</a>
+                            <a href="cars.php" class="btn btn-outline btn-block">Retour aux voitures</a>
                         </div>
                     </form>
                 </div>
