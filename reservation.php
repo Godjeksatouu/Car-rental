@@ -745,6 +745,13 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
             let selectedEndDate = null;
             let pickerInstance = null;
 
+            // Reserved dates from PHP (convert to JavaScript array)
+            const reservedDates = <?php echo json_encode($reservedDates); ?>;
+            const reservationPeriods = <?php echo json_encode($reservationPeriods); ?>;
+
+            console.log('Reserved dates loaded:', reservedDates);
+            console.log('Reservation periods:', reservationPeriods);
+
             // Debug function
             window.debugLitepicker = function() {
                 console.log('=== Litepicker Debug Info ===');
