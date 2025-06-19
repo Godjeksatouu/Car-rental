@@ -130,6 +130,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 if (!empty($dateDebut) && !empty($dateFin)) {
     $totalPrice = calculateRentalPrice($carId, $dateDebut, $dateFin, $conn);
 }
+
+// Get all reserved dates for this car to block them in the calendar
+function getReservedDatesForCar($carId, $conn) {
+    $reservedDates = [];
+
+    // Get all reservations for this car that are not cancelled
+    $query = "SELECT date_debut, date_fin FROM RESERVATION
+              WHERE id_voiture = ?
+              AND date_fin >= CURDATE()
+              ORDER BY date_debut ASC";
+
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $carId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $startDate = new DateTime($row['date_debut']);
+        $endDate = new DateTime($row['date_fin']);
+
+        // Generate all dates in the range
+        $currentDate = clone $startDate;
+        while ($currentDate <= $endDate) {
+            $reservedDates[] = $currentDate->format('Y-m-d');
+            $currentDate->add(new DateInterval('P1D'));
+        }
+    }
+
+    return array_unique($reservedDates);
+}
+
+// Get reserved dates for this specific car
+$reservedDates = getReservedDatesForCar($carId, $conn);
+
+// Also get reservation periods for better display
+function getReservationPeriods($carId, $conn) {
+    $periods = [];
+
+    $query = "SELECT r.date_debut, r.date_fin, c.nom, c.prénom
+              FROM RESERVATION r
+              JOIN CLIENT c ON r.id_client = c.id_client
+              WHERE r.id_voiture = ?
+              AND r.date_fin >= CURDATE()
+              ORDER BY r.date_debut ASC";
+
+    $stmt = mysqli_prepare($conn, $query);
+    mysqli_stmt_bind_param($stmt, "i", $carId);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $periods[] = [
+            'start' => $row['date_debut'],
+            'end' => $row['date_fin'],
+            'client' => $row['prénom'] . ' ' . substr($row['nom'], 0, 1) . '.'
+        ];
+    }
+
+    return $periods;
+}
+
+$reservationPeriods = getReservationPeriods($carId, $conn);
 ?>
 
 <!DOCTYPE html>
@@ -140,6 +202,375 @@ if (!empty($dateDebut) && !empty($dateFin)) {
     <title>Réservation - AutoDrive</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Litepicker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css">
+
+    <style>
+        /* Custom Litepicker Styles */
+        .date-picker-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .date-picker-container input {
+            flex: 1;
+            padding: 12px 45px 12px 16px;
+            border: 2px solid var(--gray-200);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            background: var(--white);
+            cursor: pointer !important;
+            transition: all 0.3s ease;
+        }
+
+        .date-picker-container input[readonly] {
+            cursor: pointer !important;
+            background: var(--white) !important;
+        }
+
+        .date-picker-container input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .date-picker-container input.date-selected {
+            border-color: #28a745;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+
+        .date-picker-icon {
+            position: absolute;
+            right: 16px;
+            color: var(--gray-500);
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .date-picker-container:hover .date-picker-icon {
+            color: var(--primary-color);
+        }
+
+        .date-feedback {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #28a745;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            margin-top: 4px;
+            animation: slideDown 0.3s ease;
+            z-index: 10;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .price-estimate.price-updated {
+            animation: priceUpdate 0.5s ease;
+        }
+
+        @keyframes priceUpdate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        /* Litepicker Theme Customization */
+        .litepicker {
+            font-family: inherit;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 1px solid var(--gray-200);
+        }
+
+        .litepicker .container__main {
+            border-radius: 12px;
+        }
+
+        .litepicker .container__months .month-item-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 8px 8px 0 0;
+            padding: 12px;
+            font-weight: 600;
+        }
+
+        .litepicker .container__days .day-item {
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            cursor: pointer !important;
+        }
+
+        .litepicker .container__days .day-item:not(.is-locked) {
+            cursor: pointer !important;
+        }
+
+        .litepicker .container__days .day-item.is-locked {
+            cursor: not-allowed !important;
+        }
+
+        .litepicker .container__days .day-item:hover:not(.is-locked) {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            cursor: pointer !important;
+        }
+
+        .litepicker .container__days .day-item.is-start-date,
+        .litepicker .container__days .day-item.is-end-date {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        .litepicker .container__days .day-item.is-in-range {
+            background: rgba(66, 153, 225, 0.2);
+            color: var(--primary-color);
+        }
+
+        /* Blocked/Reserved dates styling */
+        .litepicker .container__days .day-item.is-locked {
+            background: #f8d7da !important;
+            color: #721c24 !important;
+            cursor: not-allowed !important;
+            position: relative;
+            text-decoration: line-through;
+        }
+
+        .litepicker .container__days .day-item.is-locked:hover {
+            background: #f5c6cb !important;
+            color: #721c24 !important;
+            transform: none !important;
+        }
+
+        .litepicker .container__days .day-item.is-locked::after {
+            content: '🚫';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 8px;
+            opacity: 0.7;
+        }
+
+        .litepicker .container__footer {
+            padding: 16px;
+            border-top: 1px solid var(--gray-200);
+        }
+
+        .litepicker .container__footer .button-apply {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .litepicker .container__footer .button-apply:hover {
+            background: var(--primary-dark);
+        }
+
+        .litepicker .container__footer .button-cancel {
+            background: transparent;
+            color: var(--gray-600);
+            border: 1px solid var(--gray-300);
+            padding: 10px 20px;
+            border-radius: 6px;
+            margin-right: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .litepicker .container__footer .button-cancel:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-400);
+        }
+
+        /* Additional cursor fixes */
+        .litepicker * {
+            cursor: default !important;
+        }
+
+        .litepicker .container__days .day-item:not(.is-locked):not(.is-disabled) {
+            cursor: pointer !important;
+        }
+
+        .litepicker .container__footer button {
+            cursor: pointer !important;
+        }
+
+        .litepicker .container__months .month-item-header .button-prev-month,
+        .litepicker .container__months .month-item-header .button-next-month {
+            cursor: pointer !important;
+        }
+
+        /* Date status indicator */
+        .date-status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            color: #155724;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Manual date inputs */
+        .manual-dates {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+        }
+
+        .manual-date-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .manual-date-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .manual-date-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .toggle-manual-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #6c757d;
+            border-radius: 4px;
+            color: #6c757d;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-manual-btn:hover {
+            background: #6c757d;
+            color: white;
+        }
+
+        /* Reserved dates information styles */
+        .reserved-dates-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .reserved-dates-info h4 {
+            margin: 0 0 15px 0;
+            color: #856404;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reserved-periods {
+            margin-bottom: 15px;
+        }
+
+        .reserved-period {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #ffeaa7;
+        }
+
+        .reserved-period:last-child {
+            border-bottom: none;
+        }
+
+        .reserved-period i {
+            color: #dc3545;
+            font-size: 0.9rem;
+        }
+
+        .period-dates {
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .period-client {
+            color: #6c757d;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .reserved-note {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Validation error styles */
+        .validation-error {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .litepicker .container__months {
+                flex-direction: column;
+            }
+
+            .litepicker .container__months .month-item {
+                width: 100%;
+            }
+        }
+    </style>
 
 </head>
 <body>
@@ -196,14 +627,66 @@ if (!empty($dateDebut) && !empty($dateFin)) {
                             <label for="telephone">Téléphone</label>
                             <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($userTelephone); ?>" readonly>
                         </div>
+                        <!-- Reserved dates information -->
+                        <?php if (!empty($reservationPeriods)): ?>
+                        <div class="reserved-dates-info">
+                            <h4><i class="fas fa-calendar-times"></i> Dates déjà réservées</h4>
+                            <div class="reserved-periods">
+                                <?php foreach ($reservationPeriods as $period): ?>
+                                <div class="reserved-period">
+                                    <i class="fas fa-ban"></i>
+                                    <span class="period-dates">
+                                        Du <?php echo date('d/m/Y', strtotime($period['start'])); ?>
+                                        au <?php echo date('d/m/Y', strtotime($period['end'])); ?>
+                                    </span>
+                                    <span class="period-client">(<?php echo htmlspecialchars($period['client']); ?>)</span>
+                                </div>
+                                <?php endforeach; ?>
+                            </div>
+                            <p class="reserved-note">
+                                <i class="fas fa-info-circle"></i>
+                                Ces dates sont bloquées dans le calendrier et ne peuvent pas être sélectionnées.
+                            </p>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="date_debut">Date de début*</label>
-                                <input type="date" id="date_debut" name="date_debut" value="<?php echo $dateDebut; ?>" min="<?php echo date('Y-m-d'); ?>" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="date_fin">Date de fin*</label>
-                                <input type="date" id="date_fin" name="date_fin" value="<?php echo $dateFin; ?>" min="<?php echo date('Y-m-d'); ?>" required>
+                                <label for="date_range">Sélectionnez vos dates*</label>
+                                <div class="date-picker-container">
+                                    <input type="text" id="date_range" placeholder="Cliquez pour sélectionner les dates" readonly>
+                                    <i class="fas fa-calendar-alt date-picker-icon"></i>
+                                </div>
+
+                                <!-- Date status indicator -->
+                                <div id="date-status" class="date-status" style="display: none;">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span id="date-status-text">Dates sélectionnées</span>
+                                </div>
+
+                                <!-- Manual date inputs (fallback) -->
+                                <div id="manual-dates" class="manual-dates" style="display: none;">
+                                    <p><small>Ou saisissez les dates manuellement :</small></p>
+                                    <div class="manual-date-inputs">
+                                        <div class="manual-date-group">
+                                            <label for="manual_start">Date de début:</label>
+                                            <input type="date" id="manual_start" min="<?php echo date('Y-m-d'); ?>">
+                                        </div>
+                                        <div class="manual-date-group">
+                                            <label for="manual_end">Date de fin:</label>
+                                            <input type="date" id="manual_end" min="<?php echo date('Y-m-d'); ?>">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Toggle manual input -->
+                                <button type="button" id="toggle-manual" class="toggle-manual-btn">
+                                    <i class="fas fa-keyboard"></i> Saisie manuelle
+                                </button>
+
+                                <!-- Hidden inputs for form submission -->
+                                <input type="hidden" id="date_debut" name="date_debut" value="<?php echo htmlspecialchars($dateDebut); ?>" required>
+                                <input type="hidden" id="date_fin" name="date_fin" value="<?php echo htmlspecialchars($dateFin); ?>" required>
                             </div>
                         </div>
                         
@@ -248,36 +731,630 @@ if (!empty($dateDebut) && !empty($dateFin)) {
 
     <?php include 'includes/footer.php'; ?>
     <script src="assets/js/main.js"></script>
+    <!-- Litepicker JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/litepicker/dist/litepicker.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const dateDebutInput = document.getElementById('date_debut');
-            const dateFinInput = document.getElementById('date_fin');
             const priceEstimate = document.getElementById('priceEstimate');
             const daysCount = document.getElementById('daysCount');
             const totalPrice = document.getElementById('totalPrice');
             const pricePerDay = <?php echo $car['prix_par_jour']; ?>;
-            
-            function updatePriceEstimate() {
-                const dateDebut = dateDebutInput.value;
-                const dateFin = dateFinInput.value;
-                
-                if (dateDebut && dateFin) {
-                    const start = new Date(dateDebut);
-                    const end = new Date(dateFin);
-                    
-                    if (end >= start) {
-                        const diffTime = Math.abs(end - start);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                        
-                        daysCount.textContent = diffDays;
-                        totalPrice.textContent = (pricePerDay * diffDays).toFixed(2) + ' €';
-                        priceEstimate.style.display = 'block';
+
+            // Global variables for better state management
+            let selectedStartDate = null;
+            let selectedEndDate = null;
+            let pickerInstance = null;
+
+            // Debug function
+            window.debugLitepicker = function() {
+                console.log('=== Litepicker Debug Info ===');
+                console.log('Date debut value:', document.getElementById('date_debut').value);
+                console.log('Date fin value:', document.getElementById('date_fin').value);
+                console.log('Date range input value:', document.getElementById('date_range').value);
+                console.log('Selected start date:', selectedStartDate);
+                console.log('Selected end date:', selectedEndDate);
+                console.log('Picker object:', pickerInstance);
+                if (pickerInstance && pickerInstance.getStartDate()) {
+                    console.log('Picker start date:', pickerInstance.getStartDate().format('YYYY-MM-DD'));
+                }
+                if (pickerInstance && pickerInstance.getEndDate()) {
+                    console.log('Picker end date:', pickerInstance.getEndDate().format('YYYY-MM-DD'));
+                }
+                console.log('=== End Debug Info ===');
+            };
+
+            // Enhanced debug form data function
+            window.debugFormData = function() {
+                console.log('=== COMPREHENSIVE FORM DEBUG ===');
+
+                const form = document.getElementById('reservationForm');
+                const formData = new FormData(form);
+
+                console.log('📋 All Form Data:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`  ${key}: "${value}"`);
+                }
+
+                // Get all date-related values
+                const startDateElement = document.getElementById('date_debut');
+                const endDateElement = document.getElementById('date_fin');
+                const dateRangeElement = document.getElementById('date_range');
+
+                const startDate = startDateElement ? startDateElement.value : 'ELEMENT NOT FOUND';
+                const endDate = endDateElement ? endDateElement.value : 'ELEMENT NOT FOUND';
+                const dateRange = dateRangeElement ? dateRangeElement.value : 'ELEMENT NOT FOUND';
+
+                const debugInfo = {
+                    '🔍 Hidden start date (date_debut)': startDate,
+                    '🔍 Hidden end date (date_fin)': endDate,
+                    '📅 Date range display': dateRange,
+                    '🌐 Global start date': selectedStartDate || 'NOT SET',
+                    '🌐 Global end date': selectedEndDate || 'NOT SET',
+                    '✅ Form validity': form.checkValidity(),
+                    '🎯 Picker has dates': pickerInstance && pickerInstance.getStartDate() ? 'YES' : 'NO'
+                };
+
+                console.table(debugInfo);
+
+                // Check if elements exist
+                console.log('🔍 Element existence check:');
+                console.log('  date_debut element:', !!startDateElement);
+                console.log('  date_fin element:', !!endDateElement);
+                console.log('  date_range element:', !!dateRangeElement);
+
+                // Show detailed alert
+                let alertMessage = '🐛 FORM DEBUG RESULTS:\n\n';
+
+                if (startDate && endDate && startDate !== 'ELEMENT NOT FOUND' && endDate !== 'ELEMENT NOT FOUND') {
+                    alertMessage += '✅ SUCCESS: Both dates are populated!\n';
+                    alertMessage += `📅 Start: ${startDate}\n`;
+                    alertMessage += `📅 End: ${endDate}\n\n`;
+                    alertMessage += '🚀 Form should submit successfully!';
+                } else {
+                    alertMessage += '❌ PROBLEM: Dates are missing!\n\n';
+                    alertMessage += 'Debug details:\n';
+                    for (let [key, value] of Object.entries(debugInfo)) {
+                        alertMessage += `${key}: ${value}\n`;
+                    }
+                    alertMessage += '\n💡 Try selecting dates again or use manual input.';
+                }
+
+                alert(alertMessage);
+
+                // Additional troubleshooting
+                if (pickerInstance) {
+                    console.log('🎯 Litepicker state:');
+                    console.log('  Start date:', pickerInstance.getStartDate());
+                    console.log('  End date:', pickerInstance.getEndDate());
+
+                    if (pickerInstance.getStartDate() && pickerInstance.getEndDate()) {
+                        console.log('🔧 Attempting to re-sync dates...');
+                        updateSelectedDates(pickerInstance.getStartDate(), pickerInstance.getEndDate());
+                    }
+                }
+            };
+
+            // Initialize Litepicker with improved configuration
+            pickerInstance = new Litepicker({
+                element: document.getElementById('date_range'),
+                singleMode: false,
+                numberOfColumns: window.innerWidth > 768 ? 2 : 1,
+                numberOfMonths: window.innerWidth > 768 ? 2 : 1,
+                minDate: new Date(),
+                maxDate: new Date(new Date().getFullYear() + 2, 11, 31),
+                format: 'DD/MM/YYYY',
+                delimiter: ' - ',
+                autoApply: false, // Changed to false for better control
+                showWeekNumbers: false,
+                showTooltip: true,
+                tooltipText: {
+                    one: 'jour',
+                    other: 'jours'
+                },
+                tooltipNumber: (totalDays) => {
+                    return totalDays - 1;
+                },
+                lang: 'fr-FR',
+                buttonText: {
+                    apply: 'Confirmer',
+                    cancel: 'Annuler'
+                },
+                setup: (picker) => {
+                    console.log('Litepicker setup called');
+                    // Set initial dates if they exist
+                    <?php if (!empty($dateDebut) && !empty($dateFin)): ?>
+                    try {
+                        const initialStart = '<?php echo date('d/m/Y', strtotime($dateDebut)); ?>';
+                        const initialEnd = '<?php echo date('d/m/Y', strtotime($dateFin)); ?>';
+                        console.log('Setting initial dates:', initialStart, initialEnd);
+                        picker.setDateRange(initialStart, initialEnd);
+
+                        // Also update our global variables
+                        selectedStartDate = '<?php echo $dateDebut; ?>';
+                        selectedEndDate = '<?php echo $dateFin; ?>';
+                    } catch (e) {
+                        console.log('Error setting initial dates:', e);
+                    }
+                    <?php endif; ?>
+                },
+                onSelect: (start, end) => {
+                    console.log('=== LITEPICKER onSelect TRIGGERED ===');
+                    console.log('Start date object:', start);
+                    console.log('End date object:', end);
+
+                    if (start && end) {
+                        console.log('Both dates provided, calling updateSelectedDates...');
+                        const success = updateSelectedDates(start, end);
+                        console.log('updateSelectedDates result:', success);
+
+                        // Force immediate update of debug display
+                        setTimeout(() => {
+                            updateDebugDisplay();
+                            console.log('Debug display updated');
+                        }, 100);
+                    } else {
+                        console.log('Missing start or end date');
+                    }
+                },
+                onShow: () => {
+                    console.log('Picker shown');
+                    setTimeout(() => {
+                        const litepicker = document.querySelector('.litepicker');
+                        if (litepicker) {
+                            litepicker.style.zIndex = '9999';
+                            litepicker.style.cursor = 'default';
+                        }
+                    }, 10);
+                },
+                onHide: () => {
+                    console.log('Picker hidden');
+                    // Final validation when picker closes
+                    validateSelectedDates();
+
+                    // Force update from picker state when closing
+                    setTimeout(() => {
+                        if (pickerInstance && pickerInstance.getStartDate() && pickerInstance.getEndDate()) {
+                            console.log('Forcing update on picker close...');
+                            updateSelectedDates(pickerInstance.getStartDate(), pickerInstance.getEndDate());
+                        }
+                    }, 100);
+                }
+            });
+
+            // Function to update selected dates - ENHANCED VERSION
+            function updateSelectedDates(start, end) {
+                console.log('=== updateSelectedDates called ===');
+                console.log('Start date object:', start);
+                console.log('End date object:', end);
+
+                if (!start || !end) {
+                    console.error('Invalid dates provided to updateSelectedDates');
+                    return false;
+                }
+
+                try {
+                    // Format dates for form submission (MySQL format)
+                    const startFormatted = start.format('YYYY-MM-DD');
+                    const endFormatted = end.format('YYYY-MM-DD');
+
+                    console.log('Dates formatted for MySQL:', startFormatted, endFormatted);
+
+                    // Update global variables
+                    selectedStartDate = startFormatted;
+                    selectedEndDate = endFormatted;
+
+                    // Get hidden form inputs
+                    const startInput = document.getElementById('date_debut');
+                    const endInput = document.getElementById('date_fin');
+
+                    console.log('Hidden input elements found:', !!startInput, !!endInput);
+
+                    if (startInput && endInput) {
+                        // Clear any existing values first
+                        startInput.value = '';
+                        endInput.value = '';
+
+                        // Set new values
+                        startInput.value = startFormatted;
+                        endInput.value = endFormatted;
+
+                        // Force the browser to recognize the change
+                        startInput.setAttribute('value', startFormatted);
+                        endInput.setAttribute('value', endFormatted);
+
+                        console.log('✅ Hidden inputs updated:');
+                        console.log('  - date_debut:', startInput.value);
+                        console.log('  - date_fin:', endInput.value);
+
+                        // Verify the values are actually set
+                        setTimeout(() => {
+                            console.log('Verification after timeout:');
+                            console.log('  - date_debut value:', document.getElementById('date_debut').value);
+                            console.log('  - date_fin value:', document.getElementById('date_fin').value);
+                        }, 100);
+
+                        // Update the display input with formatted dates
+                        const displayFormatted = start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY');
+                        document.getElementById('date_range').value = displayFormatted;
+
+                        // Update price estimate
+                        updatePriceEstimate(start, end);
+
+                        // Show success feedback
+                        showDateSelectionFeedback(start, end);
+
+                        // Update real-time debug display
+                        updateDebugDisplay();
+
+                        // Trigger change events for any listeners
+                        const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                        startInput.dispatchEvent(changeEvent);
+                        endInput.dispatchEvent(changeEvent);
+
+                        // Remove any existing validation errors
+                        const existingError = document.querySelector('.validation-error');
+                        if (existingError) {
+                            existingError.remove();
+                        }
+
+                        return true;
+                    } else {
+                        console.error('❌ Could not find hidden input elements!');
+                        console.log('Available elements with date IDs:');
+                        console.log('date_debut:', document.getElementById('date_debut'));
+                        console.log('date_fin:', document.getElementById('date_fin'));
+                        return false;
+                    }
+                } catch (error) {
+                    console.error('❌ Error in updateSelectedDates:', error);
+                    return false;
+                }
+            }
+
+            // Function to validate selected dates
+            function validateSelectedDates() {
+                const startValue = document.getElementById('date_debut').value;
+                const endValue = document.getElementById('date_fin').value;
+
+                console.log('Validating dates:', startValue, endValue);
+
+                if (startValue && endValue) {
+                    console.log('Dates are valid');
+                    return true;
+                } else {
+                    console.log('Dates are missing');
+                    return false;
+                }
+            }
+
+            function updatePriceEstimate(startDate, endDate) {
+                if (startDate && endDate) {
+                    const diffTime = Math.abs(endDate - startDate);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+                    daysCount.textContent = diffDays;
+                    totalPrice.textContent = (pricePerDay * diffDays).toFixed(2) + ' €';
+                    priceEstimate.style.display = 'block';
+
+                    // Add animation to price estimate
+                    priceEstimate.classList.add('price-updated');
+                    setTimeout(() => {
+                        priceEstimate.classList.remove('price-updated');
+                    }, 500);
+                }
+            }
+
+            function showDateSelectionFeedback(start, end) {
+                const dateRangeInput = document.getElementById('date_range');
+                dateRangeInput.classList.add('date-selected');
+
+                // Show the new status indicator
+                showDateStatus('Dates sélectionnées avec succès');
+
+                setTimeout(() => {
+                    dateRangeInput.classList.remove('date-selected');
+                }, 2000);
+            }
+
+            // Enhanced form validation
+            document.getElementById('reservationForm').addEventListener('submit', function(e) {
+                console.log('=== FORM SUBMISSION STARTED ===');
+
+                // Get all possible date values
+                const startDateInput = document.getElementById('date_debut');
+                const endDateInput = document.getElementById('date_fin');
+                const dateRangeInput = document.getElementById('date_range');
+
+                const startDate = startDateInput ? startDateInput.value : '';
+                const endDate = endDateInput ? endDateInput.value : '';
+                const dateRangeValue = dateRangeInput ? dateRangeInput.value : '';
+
+                console.log('Form validation - Current values:', {
+                    startDate: startDate,
+                    endDate: endDate,
+                    dateRangeValue: dateRangeValue,
+                    selectedStartDate: selectedStartDate,
+                    selectedEndDate: selectedEndDate
+                });
+
+                // First check: Are the hidden inputs populated?
+                if (!startDate || !endDate || startDate.trim() === '' || endDate.trim() === '') {
+                    console.log('Hidden inputs are empty, trying fallback methods...');
+
+                    // Try to use global variables as fallback
+                    if (selectedStartDate && selectedEndDate) {
+                        console.log('Using global variables as fallback');
+                        startDateInput.value = selectedStartDate;
+                        endDateInput.value = selectedEndDate;
+                    }
+                    // Try to parse from display value as last resort
+                    else if (dateRangeValue && dateRangeValue.includes(' - ')) {
+                        console.log('Attempting to parse from display value:', dateRangeValue);
+                        const parseSuccess = parseDisplayDates();
+                        if (!parseSuccess) {
+                            console.log('Parse failed - showing error');
+                            e.preventDefault();
+                            showValidationError('Erreur: Les dates ne peuvent pas être traitées. Veuillez les sélectionner à nouveau.');
+                            return false;
+                        }
+                    }
+                    else {
+                        console.log('No dates found anywhere - showing error');
+                        e.preventDefault();
+                        showValidationError('Veuillez sélectionner vos dates de réservation.');
+
+                        // Try to open the picker to help user
+                        if (pickerInstance) {
+                            pickerInstance.show();
+                        }
+                        return false;
+                    }
+                }
+
+                // Get final values after potential fallback
+                const finalStartDate = startDateInput.value;
+                const finalEndDate = endDateInput.value;
+
+                console.log('Final dates for validation:', finalStartDate, finalEndDate);
+
+                // Validate date format and values
+                const start = new Date(finalStartDate);
+                const end = new Date(finalEndDate);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                    console.log('Invalid date objects');
+                    e.preventDefault();
+                    showValidationError('Les dates sélectionnées ne sont pas valides. Veuillez les sélectionner à nouveau.');
+                    return false;
+                }
+
+                if (start < today) {
+                    console.log('Start date is in the past');
+                    e.preventDefault();
+                    showValidationError('La date de début ne peut pas être dans le passé.');
+                    return false;
+                }
+
+                if (end <= start) {
+                    console.log('End date is not after start date');
+                    e.preventDefault();
+                    showValidationError('La date de fin doit être après la date de début.');
+                    return false;
+                }
+
+                console.log('=== FORM VALIDATION PASSED ===');
+                console.log('Submitting with dates:', finalStartDate, 'to', finalEndDate);
+                return true;
+            });
+
+            // Manual date input functionality
+            document.getElementById('toggle-manual').addEventListener('click', function() {
+                const manualDates = document.getElementById('manual-dates');
+                const isVisible = manualDates.style.display !== 'none';
+
+                if (isVisible) {
+                    manualDates.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-keyboard"></i> Saisie manuelle';
+                } else {
+                    manualDates.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-times"></i> Masquer saisie manuelle';
+                }
+            });
+
+            // Manual date input handlers
+            document.getElementById('manual_start').addEventListener('change', function() {
+                const startDate = this.value;
+                const endInput = document.getElementById('manual_end');
+
+                if (startDate) {
+                    // Set minimum end date to start date + 1 day
+                    const nextDay = new Date(startDate);
+                    nextDay.setDate(nextDay.getDate() + 1);
+                    endInput.min = nextDay.toISOString().split('T')[0];
+
+                    updateManualDates();
+                }
+            });
+
+            document.getElementById('manual_end').addEventListener('change', function() {
+                updateManualDates();
+            });
+
+            function updateManualDates() {
+                const startDate = document.getElementById('manual_start').value;
+                const endDate = document.getElementById('manual_end').value;
+
+                if (startDate && endDate) {
+                    console.log('Manual dates selected:', startDate, endDate);
+
+                    // Update hidden inputs
+                    document.getElementById('date_debut').value = startDate;
+                    document.getElementById('date_fin').value = endDate;
+
+                    // Update global variables
+                    selectedStartDate = startDate;
+                    selectedEndDate = endDate;
+
+                    // Update the main date picker display
+                    const startFormatted = new Date(startDate).toLocaleDateString('fr-FR');
+                    const endFormatted = new Date(endDate).toLocaleDateString('fr-FR');
+                    document.getElementById('date_range').value = startFormatted + ' - ' + endFormatted;
+
+                    // Update price estimate
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    updatePriceEstimate(start, end);
+
+                    // Show status
+                    showDateStatus('Dates saisies manuellement');
+                }
+            }
+
+            function showDateStatus(message) {
+                const statusDiv = document.getElementById('date-status');
+                const statusText = document.getElementById('date-status-text');
+
+                statusText.textContent = message;
+                statusDiv.style.display = 'flex';
+
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 3000);
+            }
+
+            // Real-time debug display update
+            function updateDebugDisplay() {
+                const startValue = document.getElementById('date_debut')?.value || 'Non défini';
+                const endValue = document.getElementById('date_fin')?.value || 'Non défini';
+                const displayValue = document.getElementById('date_range')?.value || 'Non défini';
+
+                const debugStart = document.getElementById('debug-start');
+                const debugEnd = document.getElementById('debug-end');
+                const debugDisplay = document.getElementById('debug-display');
+                const debugStatus = document.getElementById('debug-status');
+
+                if (debugStart) debugStart.textContent = startValue;
+                if (debugEnd) debugEnd.textContent = endValue;
+                if (debugDisplay) debugDisplay.textContent = displayValue;
+
+                if (debugStatus) {
+                    if (startValue !== 'Non défini' && endValue !== 'Non défini') {
+                        debugStatus.textContent = '✅ Dates définies - Prêt pour soumission';
+                        debugStatus.style.color = '#28a745';
+                    } else {
+                        debugStatus.textContent = '❌ Dates manquantes';
+                        debugStatus.style.color = '#dc3545';
                     }
                 }
             }
-            
-            dateDebutInput.addEventListener('change', updatePriceEstimate);
-            dateFinInput.addEventListener('change', updatePriceEstimate);
+
+            // Update debug display every second
+            setInterval(updateDebugDisplay, 1000);
+
+            // Force update function for manual troubleshooting
+            window.forceUpdateDates = function() {
+                console.log('=== FORCE UPDATE TRIGGERED ===');
+
+                if (pickerInstance) {
+                    const startDate = pickerInstance.getStartDate();
+                    const endDate = pickerInstance.getEndDate();
+
+                    console.log('Picker start date:', startDate);
+                    console.log('Picker end date:', endDate);
+
+                    if (startDate && endDate) {
+                        console.log('Forcing date update...');
+                        const success = updateSelectedDates(startDate, endDate);
+
+                        if (success) {
+                            alert('✅ Dates mises à jour avec succès!\n\nDébut: ' + startDate.format('DD/MM/YYYY') + '\nFin: ' + endDate.format('DD/MM/YYYY'));
+                        } else {
+                            alert('❌ Erreur lors de la mise à jour des dates');
+                        }
+
+                        updateDebugDisplay();
+                    } else {
+                        alert('❌ Aucune date sélectionnée dans le picker.\n\nVeuillez d\'abord sélectionner des dates dans le calendrier.');
+                    }
+                } else {
+                    alert('❌ Picker non initialisé');
+                }
+            };
+
+            // Alternative manual date parsing from display
+            window.parseDisplayDates = function() {
+                const displayValue = document.getElementById('date_range').value;
+                console.log('Parsing display value:', displayValue);
+
+                if (displayValue && displayValue.includes(' - ')) {
+                    const [startStr, endStr] = displayValue.split(' - ');
+                    console.log('Parsed strings:', startStr, endStr);
+
+                    try {
+                        // Parse DD/MM/YYYY format
+                        const [startDay, startMonth, startYear] = startStr.split('/');
+                        const [endDay, endMonth, endYear] = endStr.split('/');
+
+                        const startFormatted = startYear + '-' + startMonth.padStart(2, '0') + '-' + startDay.padStart(2, '0');
+                        const endFormatted = endYear + '-' + endMonth.padStart(2, '0') + '-' + endDay.padStart(2, '0');
+
+                        console.log('Formatted for MySQL:', startFormatted, endFormatted);
+
+                        // Update hidden inputs directly
+                        document.getElementById('date_debut').value = startFormatted;
+                        document.getElementById('date_fin').value = endFormatted;
+
+                        // Update global variables
+                        selectedStartDate = startFormatted;
+                        selectedEndDate = endFormatted;
+
+                        updateDebugDisplay();
+
+                        alert('✅ Dates extraites de l\'affichage!\n\nDébut: ' + startFormatted + '\nFin: ' + endFormatted);
+
+                        return true;
+                    } catch (error) {
+                        console.error('Error parsing dates:', error);
+                        alert('❌ Erreur lors de l\'analyse des dates');
+                        return false;
+                    }
+                } else {
+                    alert('❌ Aucune date trouvée dans l\'affichage');
+                    return false;
+                }
+            };
+
+            function showValidationError(message) {
+                // Remove existing error messages
+                const existingError = document.querySelector('.validation-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+
+                // Create error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'validation-error alert alert-error';
+                errorDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + message;
+
+                // Insert before the form
+                const form = document.getElementById('reservationForm');
+                form.parentNode.insertBefore(errorDiv, form);
+
+                // Scroll to error
+                errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Remove after 5 seconds
+                setTimeout(() => {
+                    if (errorDiv.parentNode) {
+                        errorDiv.remove();
+                    }
+                }, 5000);
+
+                // Also show browser alert as fallback
+                alert(message);
+            }
         });
     </script>
 </body>

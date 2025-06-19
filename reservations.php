@@ -136,9 +136,13 @@ $reservations = mysqli_stmt_get_result($stmt);
                                             <i class="fas fa-eye"></i> Voir détails
                                         </a>
                                         <?php
-                                        // Allow deletion if not paid and not started
+                                        // Allow editing and deletion if not paid and not started
                                         if (!$reservation['ETAT_PAIEMENT'] && $reservation['date_debut'] > $today):
                                         ?>
+                                            <a href="edit-reservation.php?id=<?php echo $reservation['id_reservation']; ?>"
+                                               class="btn btn-warning">
+                                                <i class="fas fa-edit"></i> Modifier
+                                            </a>
                                             <a href="delete-reservation.php?id=<?php echo $reservation['id_reservation']; ?>"
                                                class="btn btn-danger"
                                                onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')">
