@@ -3,6 +3,11 @@ session_start();
 include 'includes/config.php';
 include 'includes/functions.php';
 
+// Prevent caching to ensure fresh data
+header("Cache-Control: no-cache, no-store, must-revalidate");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // Check if user is logged in
 if (!isLoggedIn()) {
     redirectWithMessage('login.php?redirect=' . urlencode('reservation.php?id=' . ($_GET['id'] ?? '')), 'Veuillez vous connecter pour réserver', 'error');
@@ -734,6 +739,8 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                                 Les dates bloquées ci-dessous sont uniquement pour ce véhicule. D'autres véhicules peuvent être disponibles pour ces mêmes dates.
                             </p>
                         </div>
+
+
 
                         <div class="form-row">
                             <div class="form-group">
