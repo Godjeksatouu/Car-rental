@@ -84,13 +84,8 @@ if ($action === 'mark_paid') {
             mysqli_stmt_bind_param($stmt, "i", $reservationId);
             mysqli_stmt_execute($stmt);
 
-            // Update car status back to available
-            if ($car_data) {
-                $update_car = "UPDATE VOITURE SET statut = 'disponible' WHERE id_voiture = ?";
-                $stmt = mysqli_prepare($conn, $update_car);
-                mysqli_stmt_bind_param($stmt, "i", $car_data['id_voiture']);
-                mysqli_stmt_execute($stmt);
-            }
+            // Note: We don't update car status anymore
+            // Cars remain 'disponible' as they're only unavailable for specific dates
 
             // Delete from RESERVATION
             $delete_reservation = "DELETE FROM RESERVATION WHERE id_reservation = ?";

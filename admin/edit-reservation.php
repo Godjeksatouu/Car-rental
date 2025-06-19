@@ -36,8 +36,8 @@ if (mysqli_num_rows($result) === 0) {
 
 $reservation = mysqli_fetch_assoc($result);
 
-// Get all available cars for potential car change
-$cars_query = "SELECT id_voiture, marque, modele, immatriculation, prix_par_jour FROM VOITURE WHERE statut = 'disponible' OR id_voiture = ?";
+// Get all available cars for potential car change (exclude only maintenance)
+$cars_query = "SELECT id_voiture, marque, modele, immatriculation, prix_par_jour FROM VOITURE WHERE statut != 'maintenance' OR id_voiture = ?";
 $stmt = mysqli_prepare($conn, $cars_query);
 mysqli_stmt_bind_param($stmt, "i", $reservation['id_voiture']);
 mysqli_stmt_execute($stmt);
@@ -97,19 +97,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         mysqli_begin_transaction($conn);
         
         try {
-            // If car is changed, update old car status to available
-            if ($new_car_id != $reservation['id_voiture']) {
-                $update_old_car = "UPDATE VOITURE SET statut = 'disponible' WHERE id_voiture = ?";
-                $stmt = mysqli_prepare($conn, $update_old_car);
-                mysqli_stmt_bind_param($stmt, "i", $reservation['id_voiture']);
-                mysqli_stmt_execute($stmt);
-                
-                // Update new car status to reserved
-                $update_new_car = "UPDATE VOITURE SET statut = 'réservé' WHERE id_voiture = ?";
-                $stmt = mysqli_prepare($conn, $update_new_car);
-                mysqli_stmt_bind_param($stmt, "i", $new_car_id);
-                mysqli_stmt_execute($stmt);
-            }
+            // Note: We don't update car status globally anymore
+            // Cars are only unavailable for specific dates, not entirely
+            // Both old and new cars remain 'disponible' for other dates
             
             // Update reservation
             $update_query = "UPDATE RESERVATION SET date_debut = ?, date_fin = ?, id_voiture = ? WHERE id_reservation = ?";

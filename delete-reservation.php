@@ -59,11 +59,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && $canDelete) {
         mysqli_stmt_bind_param($stmt, "i", $reservationId);
         mysqli_stmt_execute($stmt);
         
-        // Update car status back to available
-        $update_car = "UPDATE VOITURE SET statut = 'disponible' WHERE id_voiture = ?";
-        $stmt = mysqli_prepare($conn, $update_car);
-        mysqli_stmt_bind_param($stmt, "i", $reservation['id_voiture']);
-        mysqli_stmt_execute($stmt);
+        // Note: We don't update car status anymore
+        // Cars remain 'disponible' as they're only unavailable for specific dates
         
         // Delete reservation
         $delete_reservation = "DELETE FROM RESERVATION WHERE id_reservation = ?";

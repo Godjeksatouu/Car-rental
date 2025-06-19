@@ -586,8 +586,16 @@ if ($sample_data_result) {
                         $carIndex++;
                         echo "<!-- Processing car #$carIndex: " . ($car['marque'] ?? 'Unknown') . " -->";
 
-                        $isBlocked = ($car['statut'] === 'réservé' || $car['statut'] === 'maintenance');
+                        // Only block cars that are in maintenance, not those with reservations
+                        // Cars with reservations are still available for other dates
+                        $isBlocked = ($car['statut'] === 'maintenance');
                         $blockClass = $isBlocked ? 'blocked' : '';
+
+                        // Show different status for cars with reservations vs maintenance
+                        $displayStatus = $car['statut'];
+                        if ($car['statut'] === 'réservé') {
+                            $displayStatus = 'disponible'; // Show as available since it's only reserved for specific dates
+                        }
                         ?>
                         <div class="car-card <?php echo $blockClass; ?>"
                              data-marque="<?php echo htmlspecialchars($car['marque'] ?? ''); ?>"
@@ -599,7 +607,7 @@ if ($sample_data_result) {
                                 <div class="blocked-overlay">
                                     <div class="blocked-content">
                                         <i class="fas fa-lock"></i>
-                                        <span><?php echo ucfirst($car['statut'] ?? ''); ?></span>
+                                        <span><?php echo ucfirst($displayStatus); ?></span>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -609,7 +617,7 @@ if ($sample_data_result) {
                                 $image = ($car['image'] && $car['image'] != '0') ? $car['image'] : 'https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
                                 ?>
                                 <img src="<?php echo htmlspecialchars($image); ?>" alt="<?php echo htmlspecialchars(($car['marque'] ?? '') . ' ' . ($car['modele'] ?? '')); ?>">
-                                <div class="car-status <?php echo $car['statut'] ?? ''; ?>"><?php echo ucfirst($car['statut'] ?? ''); ?></div>
+                                <div class="car-status <?php echo $displayStatus; ?>"><?php echo ucfirst($displayStatus); ?></div>
                             </div>
 
                             <div class="car-info">

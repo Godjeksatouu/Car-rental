@@ -29,9 +29,9 @@ if (mysqli_num_rows($result) === 0) {
 
 $car = mysqli_fetch_assoc($result);
 
-// Check if car is available
-if ($car['statut'] !== 'disponible') {
-    redirectWithMessage('car-details.php?id=' . $carId, 'Cette voiture n\'est pas disponible à la location', 'error');
+// Check if car is available (only block maintenance, not reserved status)
+if ($car['statut'] === 'maintenance') {
+    redirectWithMessage('car-details.php?id=' . $carId, 'Cette voiture est en maintenance et n\'est pas disponible à la location', 'error');
 }
 
 // Get user details
@@ -108,11 +108,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             mysqli_stmt_bind_param($stmt, "i", $reservationId);
             mysqli_stmt_execute($stmt);
             
-            // Update car status
-            $query = "UPDATE VOITURE SET statut = 'réservé' WHERE id_voiture = ?";
-            $stmt = mysqli_prepare($conn, $query);
-            mysqli_stmt_bind_param($stmt, "i", $carId);
-            mysqli_stmt_execute($stmt);
+            // Note: We don't update car status to 'réservé' globally anymore
+            // Cars are only unavailable for specific dates, not entirely
+            // The car remains 'disponible' for other dates
             
             // Commit transaction
             mysqli_commit($conn);
@@ -724,28 +722,6 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                             <label for="telephone">Téléphone</label>
                             <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($userTelephone); ?>" readonly>
                         </div>
-                        <!-- Reserved dates information -->
-                        <?php if (!empty($reservationPeriods)): ?>
-                        <div class="reserved-dates-info">
-                            <h4><i class="fas fa-calendar-times"></i> Dates déjà réservées</h4>
-                            <div class="reserved-periods">
-                                <?php foreach ($reservationPeriods as $period): ?>
-                                <div class="reserved-period">
-                                    <i class="fas fa-ban"></i>
-                                    <span class="period-dates">
-                                        Du <?php echo date('d/m/Y', strtotime($period['start'])); ?>
-                                        au <?php echo date('d/m/Y', strtotime($period['end'])); ?>
-                                    </span>
-                                    <span class="period-client">(<?php echo htmlspecialchars($period['client']); ?>)</span>
-                                </div>
-                                <?php endforeach; ?>
-                            </div>
-                            <p class="reserved-note">
-                                <i class="fas fa-info-circle"></i>
-                                Ces dates sont bloquées dans le calendrier et ne peuvent pas être sélectionnées.
-                            </p>
-                        </div>
-                        <?php endif; ?>
 
                         <div class="form-row">
                             <div class="form-group">
