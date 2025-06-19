@@ -560,6 +560,88 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
             }
         }
 
+        /* Blocked date error styles */
+        .blocked-date-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            animation: slideInError 0.3s ease;
+        }
+
+        .blocked-error-content {
+            padding: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .blocked-error-content > i {
+            color: #721c24;
+            font-size: 1.2rem;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .blocked-error-text {
+            flex: 1;
+        }
+
+        .blocked-error-text h4 {
+            margin: 0 0 8px 0;
+            color: #721c24;
+            font-size: 1rem;
+        }
+
+        .blocked-error-text p {
+            margin: 0 0 8px 0;
+            color: #721c24;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .blocked-error-text p:last-child {
+            margin-bottom: 0;
+        }
+
+        .blocking-period {
+            background: rgba(114, 28, 36, 0.1);
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 3px solid #721c24;
+        }
+
+        .suggestion {
+            font-weight: 600;
+            color: #721c24 !important;
+        }
+
+        .close-error {
+            background: none;
+            border: none;
+            color: #721c24;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .close-error:hover {
+            background: rgba(114, 28, 36, 0.1);
+        }
+
+        @keyframes slideInError {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .litepicker .container__months {
@@ -568,6 +650,21 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
 
             .litepicker .container__months .month-item {
                 width: 100%;
+            }
+
+            .reserved-dates-info {
+                padding: 15px;
+            }
+
+            .reserved-period {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .blocked-error-content {
+                flex-direction: column;
+                gap: 10px;
             }
         }
     </style>
@@ -841,7 +938,7 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                 }
             };
 
-            // Initialize Litepicker with improved configuration
+            // Initialize Litepicker with improved configuration and date blocking
             pickerInstance = new Litepicker({
                 element: document.getElementById('date_range'),
                 singleMode: false,
@@ -851,7 +948,7 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                 maxDate: new Date(new Date().getFullYear() + 2, 11, 31),
                 format: 'DD/MM/YYYY',
                 delimiter: ' - ',
-                autoApply: false, // Changed to false for better control
+                autoApply: false,
                 showWeekNumbers: false,
                 showTooltip: true,
                 tooltipText: {
@@ -866,6 +963,19 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                     apply: 'Confirmer',
                     cancel: 'Annuler'
                 },
+                // Block reserved dates
+                lockDaysFilter: (date) => {
+                    const dateStr = date.format('YYYY-MM-DD');
+                    const isReserved = reservedDates.includes(dateStr);
+
+                    if (isReserved) {
+                        console.log('Blocking reserved date:', dateStr);
+                    }
+
+                    return isReserved;
+                },
+                // Disable selection of locked days in range
+                disallowLockDaysInRange: true,
                 setup: (picker) => {
                     console.log('Litepicker setup called');
                     // Set initial dates if they exist
@@ -910,8 +1020,11 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                         if (litepicker) {
                             litepicker.style.zIndex = '9999';
                             litepicker.style.cursor = 'default';
+
+                            // Add tooltips to blocked dates
+                            addBlockedDateTooltips();
                         }
-                    }, 10);
+                    }, 100);
                 },
                 onHide: () => {
                     console.log('Picker hidden');
@@ -925,6 +1038,39 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                             updateSelectedDates(pickerInstance.getStartDate(), pickerInstance.getEndDate());
                         }
                     }, 100);
+                },
+                onError: (error) => {
+                    console.log('Litepicker error:', error);
+
+                    // Handle specific error cases
+                    if (error && error.message) {
+                        if (error.message.includes('locked') || error.message.includes('disabled')) {
+                            showBlockedDateError();
+                        }
+                    }
+                },
+                onSelectStart: (date) => {
+                    console.log('Selection started:', date);
+                    // Clear any previous error messages
+                    clearBlockedDateError();
+                },
+                onSelectEnd: (date) => {
+                    console.log('Selection ended:', date);
+                    // Validate the selected range doesn't include blocked dates
+                    if (pickerInstance.getStartDate() && pickerInstance.getEndDate()) {
+                        const hasBlockedDates = checkRangeForBlockedDates(
+                            pickerInstance.getStartDate(),
+                            pickerInstance.getEndDate()
+                        );
+
+                        if (hasBlockedDates) {
+                            showBlockedDateError();
+                            // Clear the selection
+                            setTimeout(() => {
+                                pickerInstance.clearSelection();
+                            }, 100);
+                        }
+                    }
                 }
             });
 
@@ -1259,6 +1405,119 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
 
             // Update debug display every second
             setInterval(updateDebugDisplay, 1000);
+
+            // Function to check if a date range contains blocked dates
+            function checkRangeForBlockedDates(startDate, endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const current = new Date(start);
+
+                while (current <= end) {
+                    const dateStr = current.toISOString().split('T')[0];
+                    if (reservedDates.includes(dateStr)) {
+                        console.log('Found blocked date in range:', dateStr);
+                        return true;
+                    }
+                    current.setDate(current.getDate() + 1);
+                }
+
+                return false;
+            }
+
+            // Function to show blocked date error
+            function showBlockedDateError() {
+                // Remove existing error
+                clearBlockedDateError();
+
+                // Find which period is blocking
+                let blockingPeriod = null;
+                if (pickerInstance.getStartDate() && pickerInstance.getEndDate()) {
+                    const start = pickerInstance.getStartDate().format('YYYY-MM-DD');
+                    const end = pickerInstance.getEndDate().format('YYYY-MM-DD');
+
+                    for (let period of reservationPeriods) {
+                        if ((start >= period.start && start <= period.end) ||
+                            (end >= period.start && end <= period.end) ||
+                            (start <= period.start && end >= period.end)) {
+                            blockingPeriod = period;
+                            break;
+                        }
+                    }
+                }
+
+                // Create error message
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'blocked-date-error';
+                errorDiv.innerHTML = `
+                    <div class="blocked-error-content">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="blocked-error-text">
+                            <h4>Dates non disponibles</h4>
+                            <p>Les dates sélectionnées incluent des périodes déjà réservées.</p>
+                            ${blockingPeriod ? `
+                                <p class="blocking-period">
+                                    <strong>Période bloquée:</strong>
+                                    Du ${new Date(blockingPeriod.start).toLocaleDateString('fr-FR')}
+                                    au ${new Date(blockingPeriod.end).toLocaleDateString('fr-FR')}
+                                    (${blockingPeriod.client})
+                                </p>
+                            ` : ''}
+                            <p class="suggestion">Veuillez choisir d'autres dates disponibles.</p>
+                        </div>
+                        <button type="button" onclick="clearBlockedDateError()" class="close-error">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+
+                // Insert before the date picker
+                const datePickerContainer = document.querySelector('.date-picker-container');
+                datePickerContainer.parentNode.insertBefore(errorDiv, datePickerContainer);
+
+                // Auto-remove after 8 seconds
+                setTimeout(() => {
+                    clearBlockedDateError();
+                }, 8000);
+            }
+
+            // Function to clear blocked date error
+            function clearBlockedDateError() {
+                const existingError = document.querySelector('.blocked-date-error');
+                if (existingError) {
+                    existingError.remove();
+                }
+            }
+
+            // Make clearBlockedDateError globally available
+            window.clearBlockedDateError = clearBlockedDateError;
+
+            // Function to add tooltips to blocked dates
+            function addBlockedDateTooltips() {
+                const lockedDays = document.querySelectorAll('.litepicker .day-item.is-locked');
+
+                lockedDays.forEach(day => {
+                    const dateStr = day.getAttribute('data-time');
+                    if (dateStr) {
+                        const date = new Date(parseInt(dateStr));
+                        const dateFormatted = date.toISOString().split('T')[0];
+
+                        // Find which reservation period this date belongs to
+                        let period = null;
+                        for (let p of reservationPeriods) {
+                            if (dateFormatted >= p.start && dateFormatted <= p.end) {
+                                period = p;
+                                break;
+                            }
+                        }
+
+                        if (period) {
+                            const tooltip = `Réservé par ${period.client}\nDu ${new Date(period.start).toLocaleDateString('fr-FR')} au ${new Date(period.end).toLocaleDateString('fr-FR')}`;
+                            day.setAttribute('title', tooltip);
+                            day.style.position = 'relative';
+                        }
+                    }
+                });
+            }
 
             // Force update function for manual troubleshooting
             window.forceUpdateDates = function() {
