@@ -723,6 +723,18 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                             <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($userTelephone); ?>" readonly>
                         </div>
 
+                        <!-- Car-specific blocking indicator -->
+                        <div class="car-specific-info" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                            <h4 style="margin: 0 0 8px 0; color: #1565c0; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-info-circle"></i>
+                                Calendrier spécifique à ce véhicule
+                            </h4>
+                            <p style="margin: 0; color: #1565c0; font-size: 0.9rem;">
+                                <strong>Véhicule:</strong> <?php echo htmlspecialchars($car['marque'] . ' ' . $car['modele']); ?> (ID: <?php echo $carId; ?>)<br>
+                                Les dates bloquées ci-dessous sont uniquement pour ce véhicule. D'autres véhicules peuvent être disponibles pour ces mêmes dates.
+                            </p>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="date_range">Sélectionnez vos dates*</label>
@@ -821,9 +833,20 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
             // Reserved dates from PHP (convert to JavaScript array)
             const reservedDates = <?php echo json_encode($reservedDates); ?>;
             const reservationPeriods = <?php echo json_encode($reservationPeriods); ?>;
+            const currentCarId = <?php echo $carId; ?>;
 
-            console.log('Reserved dates loaded:', reservedDates);
-            console.log('Reservation periods:', reservationPeriods);
+            console.log('=== CAR-SPECIFIC BLOCKING DEBUG ===');
+            console.log('Current Car ID:', currentCarId);
+            console.log('Reserved dates for this car only:', reservedDates);
+            console.log('Reservation periods for this car:', reservationPeriods);
+            console.log('Total blocked dates count:', reservedDates.length);
+
+            if (reservedDates.length > 0) {
+                console.log('First blocked date:', reservedDates[0]);
+                console.log('Last blocked date:', reservedDates[reservedDates.length - 1]);
+            } else {
+                console.log('✅ No blocked dates for this car - calendar should be fully available');
+            }
 
             // Debug function
             window.debugLitepicker = function() {
