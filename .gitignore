@@ -1,0 +1,197 @@
+# AutoDrive Car Rental System - Git Ignore File
+
+# =============================================================================
+# CONFIGURATION FILES
+# =============================================================================
+
+# Database configuration (contains sensitive credentials)
+includes/config.php.local
+config.local.php
+.env
+.env.local
+
+# =============================================================================
+# DEVELOPMENT TOOLS
+# =============================================================================
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# =============================================================================
+# LOGS AND TEMPORARY FILES
+# =============================================================================
+
+# PHP logs
+*.log
+error.log
+access.log
+php_errors.log
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+temp/
+
+# =============================================================================
+# UPLOADS AND USER CONTENT
+# =============================================================================
+
+# User uploaded files (keep structure, ignore content)
+uploads/*
+!uploads/.gitkeep
+assets/images/uploads/*
+!assets/images/uploads/.gitkeep
+
+# Generated thumbnails
+assets/images/thumbs/
+assets/images/cache/
+
+# =============================================================================
+# DEPENDENCIES AND PACKAGES
+# =============================================================================
+
+# Composer (if used)
+vendor/
+composer.lock
+
+# Node.js (if used for build tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# =============================================================================
+# BUILD AND DISTRIBUTION
+# =============================================================================
+
+# Compiled assets
+dist/
+build/
+*.min.css
+*.min.js
+
+# Backup files
+*.backup
+*.bak
+backup/
+backups/
+
+# =============================================================================
+# SECURITY AND SENSITIVE DATA
+# =============================================================================
+
+# Sensitive configuration files
+config/database.php
+config/secrets.php
+.htpasswd
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+
+# =============================================================================
+# OPERATING SYSTEM FILES
+# =============================================================================
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Linux
+*~
+.nfs*
+
+# =============================================================================
+# VERSION CONTROL
+# =============================================================================
+
+# Git
+.git/
+*.orig
+
+# SVN
+.svn/
+
+# =============================================================================
+# DOCUMENTATION BUILDS
+# =============================================================================
+
+# Generated documentation
+docs/_build/
+docs/build/
+site/
+
+# =============================================================================
+# TESTING
+# =============================================================================
+
+# Test coverage reports
+coverage/
+.coverage
+*.cover
+htmlcov/
+
+# Test databases
+test.db
+test.sqlite
+
+# =============================================================================
+# CUSTOM PROJECT IGNORES
+# =============================================================================
+
+# Custom development files
+dev/
+development/
+sandbox/
+
+# Local configuration overrides
+local.php
+local_config.php
+
+# Database dumps (except the main schema)
+*.sql
+!database/car_rental.sql
+
+# Session files
+sessions/
+tmp/sessions/
+
+# Cache directories
+cache/
+.cache/
+
+# =============================================================================
+# KEEP THESE FILES
+# =============================================================================
+
+# Important: Don't ignore these essential files
+!.gitignore
+!README.md
+!LICENSE
+!CONTRIBUTING.md
+!CHANGELOG.md
+!index.php
+!database/car_rental.sql
