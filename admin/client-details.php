@@ -1,57 +1,117 @@
 <?php
+/**
+ * CLIENT DETAILS PAGE - CLEAN VERSION
+ *
+ * This page shows detailed information about a specific client including
+ * their reservations and payment history.
+ *
+ * WHAT THIS PAGE DOES:
+ * 1. Displays client personal information
+ * 2. Shows all reservations made by the client
+ * 3. Lists payment history and status
+ * 4. Provides statistics about the client's activity
+ *
+ * BEGINNER EXPLANATION:
+ * - Like a customer profile page in an online store
+ * - Shows everything we know about this specific customer
+ * - Helps admin staff understand customer history and activity
+ */
+
+// =============================================================================
+// SETUP AND SECURITY CHECKS
+// =============================================================================
+
+// Start session to track admin login
 session_start();
+
+// Include our database connection and helper functions
 include '../includes/config.php';
 include '../includes/functions.php';
 
-// Check if user is admin
+// Check if user is admin (only admins can view client details)
 if (!isAdmin()) {
     header("Location: ../login.php");
     exit();
 }
 
-// Check if ID is provided
+// Check if a client ID was provided in the URL
 if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
     header("Location: clients.php");
     exit();
 }
 
+// Get the client ID from the URL and convert to integer for security
 $client_id = (int)$_GET['id'];
 
-// Get client details
-$query = "SELECT * FROM CLIENT WHERE id_client = ?";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $client_id);
-$stmt->execute();
-$result = $stmt->get_result();
-$client = $result->fetch_assoc();
+// =============================================================================
+// GET CLIENT INFORMATION FROM DATABASE
+// =============================================================================
 
-if (!$client) {
+// Get basic client details
+$client_query = "SELECT * FROM CLIENT WHERE id_client = ?";
+$client_statement = mysqli_prepare($conn, $client_query);
+
+// Check if the query preparation was successful
+if (!$client_statement) {
+    die("Database error: " . mysqli_error($conn));
+}
+
+mysqli_stmt_bind_param($client_statement, "i", $client_id);
+mysqli_stmt_execute($client_statement);
+$client_result = mysqli_stmt_get_result($client_statement);
+$client_data = mysqli_fetch_assoc($client_result);
+
+// If client doesn't exist, redirect back to clients list
+if (!$client_data) {
     header("Location: clients.php");
     exit();
 }
 
-// Get client reservations
-$query = "SELECT r.*, v.marque, v.modele, v.immatriculation 
-          FROM RESERVATION r 
-          JOIN VOITURE v ON r.id_voiture = v.id_voiture 
-          WHERE r.id_client = ? 
-          ORDER BY r.date_reservation DESC";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $client_id);
-$stmt->execute();
-$reservations = $stmt->get_result();
+// =============================================================================
+// GET CLIENT RESERVATIONS
+// =============================================================================
 
-// Get client payments
-$query = "SELECT l.*, r.date_debut, r.date_fin, v.marque, v.modele 
-          FROM LOCATION l 
-          JOIN RESERVATION r ON l.id_reservation = r.id_reservation 
-          JOIN VOITURE v ON r.id_voiture = v.id_voiture 
-          WHERE r.id_client = ? 
-          ORDER BY l.date_paiement DESC";
-$stmt = $conn->prepare($query);
-$stmt->bind_param("i", $client_id);
-$stmt->execute();
-$payments = $stmt->get_result();
+// Get all reservations made by this client
+// Note: We removed 'date_reservation' as it doesn't exist in the RESERVATION table
+$reservations_query = "SELECT r.*, v.marque, v.modele, v.immatriculation
+                      FROM RESERVATION r
+                      JOIN VOITURE v ON r.id_voiture = v.id_voiture
+                      WHERE r.id_client = ?
+                      ORDER BY r.date_debut DESC";
+
+$reservations_statement = mysqli_prepare($conn, $reservations_query);
+
+// Check if the query preparation was successful
+if (!$reservations_statement) {
+    die("Database error in reservations query: " . mysqli_error($conn));
+}
+
+mysqli_stmt_bind_param($reservations_statement, "i", $client_id);
+mysqli_stmt_execute($reservations_statement);
+$reservations_result = mysqli_stmt_get_result($reservations_statement);
+
+// =============================================================================
+// GET CLIENT PAYMENTS
+// =============================================================================
+
+// Get all payments made by this client through their reservations
+$payments_query = "SELECT l.*, r.date_debut, r.date_fin, v.marque, v.modele
+                  FROM LOCATION l
+                  JOIN RESERVATION r ON l.id_reservation = r.id_reservation
+                  JOIN VOITURE v ON r.id_voiture = v.id_voiture
+                  WHERE r.id_client = ?
+                  ORDER BY l.id_location DESC";
+
+$payments_statement = mysqli_prepare($conn, $payments_query);
+
+// Check if the query preparation was successful
+if (!$payments_statement) {
+    die("Database error in payments query: " . mysqli_error($conn));
+}
+
+mysqli_stmt_bind_param($payments_statement, "i", $client_id);
+mysqli_stmt_execute($payments_statement);
+$payments_result = mysqli_stmt_get_result($payments_statement);
 ?>
 
 <!DOCTYPE html>
@@ -81,12 +141,16 @@ $payments = $stmt->get_result();
                                 <i class="fas fa-user-circle"></i>
                             </div>
                             <div class="client-data">
-                                <h3><?php echo htmlspecialchars($client['nom'] . ' ' . $client['prénom']); ?></h3>
-                                <p class="client-id">Client #<?php echo $client['id_client']; ?></p>
+                                <h3><?php echo htmlspecialchars($client_data['nom'] . ' ' . $client_data['prénom']); ?></h3>
+                                <p class="client-id">Client #<?php echo $client_data['id_client']; ?></p>
                                 <div class="client-contact">
-                                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($client['email']); ?></p>
-                                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($client['téléphone']); ?></p>
-                                    <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($client['adresse']); ?></p>
+                                    <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($client_data['email']); ?></p>
+                                    <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($client_data['téléphone']); ?></p>
+                                    <?php if (isset($client_data['adresse']) && !empty($client_data['adresse'])): ?>
+                                        <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($client_data['adresse']); ?></p>
+                                    <?php else: ?>
+                                        <p><i class="fas fa-map-marker-alt"></i> <em>Adresse non renseignée</em></p>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -95,21 +159,30 @@ $payments = $stmt->get_result();
                                 <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
                                 <div class="stat-content">
                                     <h4>Réservations</h4>
-                                    <p class="stat-value"><?php echo $reservations->num_rows; ?></p>
+                                    <p class="stat-value"><?php echo mysqli_num_rows($reservations_result); ?></p>
                                 </div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-icon"><i class="fas fa-money-bill-wave"></i></div>
                                 <div class="stat-content">
                                     <h4>Paiements</h4>
-                                    <p class="stat-value"><?php echo $payments->num_rows; ?></p>
+                                    <p class="stat-value"><?php echo mysqli_num_rows($payments_result); ?></p>
                                 </div>
                             </div>
                             <div class="stat-card">
                                 <div class="stat-icon"><i class="fas fa-user-clock"></i></div>
                                 <div class="stat-content">
                                     <h4>Client depuis</h4>
-                                    <p class="stat-value"><?php echo date('d/m/Y', strtotime($client['date_inscription'])); ?></p>
+                                    <p class="stat-value">
+                                        <?php
+                                        // Check if date_inscription exists, otherwise use a default
+                                        if (isset($client_data['date_inscription']) && !empty($client_data['date_inscription']) && $client_data['date_inscription'] !== '0000-00-00') {
+                                            echo date('d/m/Y', strtotime($client_data['date_inscription']));
+                                        } else {
+                                            echo "Non disponible";
+                                        }
+                                        ?>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -123,7 +196,7 @@ $payments = $stmt->get_result();
                     <h2><i class="fas fa-calendar-alt"></i> Réservations</h2>
                 </div>
                 <div class="admin-card-body">
-                    <?php if ($reservations->num_rows > 0): ?>
+                    <?php if (mysqli_num_rows($reservations_result) > 0): ?>
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead>
@@ -132,27 +205,25 @@ $payments = $stmt->get_result();
                                         <th>Voiture</th>
                                         <th>Date de début</th>
                                         <th>Date de fin</th>
-                                        <th>Statut</th>
-                                        <th>Date de réservation</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php while ($reservation = $reservations->fetch_assoc()): ?>
+                                    <?php while ($reservation_data = mysqli_fetch_assoc($reservations_result)): ?>
                                         <tr>
-                                            <td>#<?php echo $reservation['id_reservation']; ?></td>
-                                            <td><?php echo htmlspecialchars($reservation['marque'] . ' ' . $reservation['modele']); ?></td>
-                                            <td><?php echo date('d/m/Y', strtotime($reservation['date_debut'])); ?></td>
-                                            <td><?php echo date('d/m/Y', strtotime($reservation['date_fin'])); ?></td>
-                                            <td>
-                                                <span class="status-badge status-<?php echo strtolower($reservation['statut']); ?>">
-                                                    <?php echo htmlspecialchars($reservation['statut']); ?>
-                                                </span>
-                                            </td>
-                                            <td><?php echo date('d/m/Y H:i', strtotime($reservation['date_reservation'])); ?></td>
+                                            <td>#<?php echo $reservation_data['id_reservation']; ?></td>
+                                            <td><?php echo htmlspecialchars($reservation_data['marque'] . ' ' . $reservation_data['modele']); ?></td>
+                                            <td><?php echo date('d/m/Y', strtotime($reservation_data['date_debut'])); ?></td>
+                                            <td><?php echo date('d/m/Y', strtotime($reservation_data['date_fin'])); ?></td>
                                             <td class="actions">
-                                                <a href="reservation-details.php?id=<?php echo $reservation['id_reservation']; ?>" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-eye"></i>
+                                                <a href="edit-reservation.php?id=<?php echo $reservation_data['id_reservation']; ?>" class="btn btn-sm btn-primary" title="Modifier">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="delete-reservation.php?id=<?php echo $reservation_data['id_reservation']; ?>"
+                                                   class="btn btn-sm btn-danger"
+                                                   title="Supprimer"
+                                                   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')">
+                                                    <i class="fas fa-trash"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -178,7 +249,7 @@ $payments = $stmt->get_result();
                     <h2><i class="fas fa-money-check-alt"></i> Paiements</h2>
                 </div>
                 <div class="admin-card-body">
-                    <?php if ($payments->num_rows > 0): ?>
+                    <?php if (mysqli_num_rows($payments_result) > 0): ?>
                         <div class="table-responsive">
                             <table class="admin-table">
                                 <thead>
@@ -193,19 +264,46 @@ $payments = $stmt->get_result();
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <?php while ($payment = $payments->fetch_assoc()): ?>
+                                    <?php while ($payment_data = mysqli_fetch_assoc($payments_result)): ?>
                                         <tr>
-                                            <td>#<?php echo $payment['id_location']; ?></td>
-                                            <td><?php echo htmlspecialchars($payment['marque'] . ' ' . $payment['modele']); ?></td>
+                                            <td>#<?php echo $payment_data['id_location']; ?></td>
+                                            <td><?php echo htmlspecialchars($payment_data['marque'] . ' ' . $payment_data['modele']); ?></td>
                                             <td>
-                                                <?php echo date('d/m/Y', strtotime($payment['date_debut'])) . ' - ' . date('d/m/Y', strtotime($payment['date_fin'])); ?>
+                                                <?php echo date('d/m/Y', strtotime($payment_data['date_debut'])) . ' - ' . date('d/m/Y', strtotime($payment_data['date_fin'])); ?>
                                             </td>
-                                            <td><?php echo number_format($payment['montant'], 2, ',', ' '); ?> €</td>
-                                            <td><?php echo htmlspecialchars($payment['methode_paiement']); ?></td>
-                                            <td><?php echo date('d/m/Y H:i', strtotime($payment['date_paiement'])); ?></td>
                                             <td>
-                                                <span class="payment-status <?php echo $payment['ETAT_PAIEMENT'] ? 'paid' : 'unpaid'; ?>">
-                                                    <?php echo $payment['ETAT_PAIEMENT'] ? 'Payé' : 'Non payé'; ?>
+                                                <?php
+                                                // Check if montant field exists, otherwise calculate from car price and dates
+                                                if (isset($payment_data['montant']) && !empty($payment_data['montant'])) {
+                                                    echo number_format($payment_data['montant'], 2, ',', ' ') . ' €';
+                                                } else {
+                                                    echo 'Non calculé';
+                                                }
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?php
+                                                // Check if payment method exists
+                                                if (isset($payment_data['methode_paiement']) && !empty($payment_data['methode_paiement'])) {
+                                                    echo htmlspecialchars($payment_data['methode_paiement']);
+                                                } else {
+                                                    echo 'Non spécifié';
+                                                }
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?php
+                                                // Check if payment date exists
+                                                if (isset($payment_data['date_paiement']) && !empty($payment_data['date_paiement'])) {
+                                                    echo date('d/m/Y H:i', strtotime($payment_data['date_paiement']));
+                                                } else {
+                                                    echo 'Non payé';
+                                                }
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <span class="payment-status <?php echo $payment_data['ETAT_PAIEMENT'] ? 'paid' : 'unpaid'; ?>">
+                                                    <?php echo $payment_data['ETAT_PAIEMENT'] ? 'Payé' : 'Non payé'; ?>
                                                 </span>
                                             </td>
                                         </tr>

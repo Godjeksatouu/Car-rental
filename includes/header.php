@@ -18,12 +18,19 @@
                 <div class="dropdown">
                     <button class="dropdown-btn">
                         <i class="fas fa-user-circle"></i>
-                        <?php 
-                        $userId = $_SESSION['user_id'];
-                        $query = "SELECT nom, prénom FROM CLIENT WHERE id_client = $userId";
-                        $result = mysqli_query($conn, $query);
-                        $user = mysqli_fetch_assoc($result);
-                        echo $user['prénom'] ? $user['prénom'] : $user['nom'];
+                        <?php
+                        // Get current user's name safely using prepared statement
+                        $current_user_id = $_SESSION['user_id'];
+                        $user_query = "SELECT nom, prénom FROM CLIENT WHERE id_client = ?";
+                        $user_statement = mysqli_prepare($conn, $user_query);
+                        mysqli_stmt_bind_param($user_statement, "i", $current_user_id);
+                        mysqli_stmt_execute($user_statement);
+                        $user_result = mysqli_stmt_get_result($user_statement);
+                        $user_data = mysqli_fetch_assoc($user_result);
+
+                        // Display first name if available, otherwise last name
+                        $display_name = !empty($user_data['prénom']) ? $user_data['prénom'] : $user_data['nom'];
+                        echo htmlspecialchars($display_name);
                         ?>
                         <i class="fas fa-chevron-down"></i>
                     </button>
