@@ -3,7 +3,6 @@ session_start();
 include 'includes/config.php';
 include 'includes/functions.php';
 
-// Basic error reporting
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -54,18 +53,18 @@ $types = mysqli_query($conn, "SELECT DISTINCT type FROM voiture ORDER BY type");
 $gears = mysqli_query($conn, "SELECT DISTINCT gear FROM voiture ORDER BY gear");
 $places_options = mysqli_query($conn, "SELECT DISTINCT nb_places FROM voiture ORDER BY nb_places");
 ?>
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Nos Voitures</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nos Voitures - AutoDrive</title>
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* Debug styles - remove these after fixing */
+        /* Cars Grid */
         .cars-grid {
-            display: grid !important;
+            display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 20px;
             padding: 20px;
@@ -337,8 +336,6 @@ $places_options = mysqli_query($conn, "SELECT DISTINCT nb_places FROM voiture OR
             font-weight: normal !important;
         }
 
-
-
         /* Responsive Design */
         @media (max-width: 768px) {
             .filter-row {
@@ -358,93 +355,170 @@ $places_options = mysqli_query($conn, "SELECT DISTINCT nb_places FROM voiture OR
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
-    <h1>Nos Voitures</h1>
-    
-    <!-- Filters -->
-    <form method="GET" action="cars.php">
-        <div>
-            <label>Marque:</label>
-            <select name="marque">
-                <option value="">Toutes</option>
-                <?php while($m = mysqli_fetch_assoc($marques)): ?>
-                    <option value="<?= $m['marque'] ?>" <?= ($marque == $m['marque']) ? 'selected' : '' ?>>
-                        <?= $m['marque'] ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
+
+    <section class="page-header">
+        <div class="container">
+            <h1>Nos Voitures</h1>
+            <p>Trouvez la voiture parfaite pour vos besoins</p>
         </div>
-        
-        <div>
-            <label>Type:</label>
-            <select name="type">
-                <option value="">Tous</option>
-                <?php while($t = mysqli_fetch_assoc($types)): ?>
-                    <option value="<?= $t['type'] ?>" <?= ($type == $t['type']) ? 'selected' : '' ?>>
-                        <?= $t['type'] ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
+    </section>
+
+    <section class="cars-section">
+        <div class="container">      
+            
+            <!-- Filter Section -->
+            <div class="filters-section">
+                <h3><i class="fas fa-filter"></i> Filtrer les voitures</h3>
+                <form method="GET" action="cars.php" class="filters-form">
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="marque">Marque</label>
+                            <select name="marque" id="marque">
+                                <option value="">Toutes les marques</option>
+                                <?php while($marque_row = mysqli_fetch_assoc($marques)): ?>
+                                    <option value="<?= htmlspecialchars($marque_row['marque']) ?>" <?= ($marque === $marque_row['marque']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($marque_row['marque']) ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="type">Type de carburant</label>
+                            <select name="type" id="type">
+                                <option value="">Tous les types</option>
+                                <?php while($type_row = mysqli_fetch_assoc($types)): ?>
+                                    <option value="<?= htmlspecialchars($type_row['type']) ?>" <?= ($type === $type_row['type']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($type_row['type']) ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="gear">Boîte de vitesses</label>
+                            <select name="gear" id="gear">
+                                <option value="">Toutes les boîtes</option>
+                                <?php while($gear_row = mysqli_fetch_assoc($gears)): ?>
+                                    <option value="<?= htmlspecialchars($gear_row['gear']) ?>" <?= ($gear === $gear_row['gear']) ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($gear_row['gear']) ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="nb_places">Nombre de places</label>
+                            <select name="nb_places" id="nb_places">
+                                <option value="">Toutes</option>
+                                <?php while($places_row = mysqli_fetch_assoc($places_options)): ?>
+                                    <option value="<?= $places_row['nb_places'] ?>" <?= ($places == $places_row['nb_places']) ? 'selected' : '' ?>>
+                                        <?= $places_row['nb_places'] ?> places
+                                    </option>
+                                <?php endwhile; ?>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-row">
+                        <div class="filter-group">
+                            <label for="prix_min">Prix minimum (€/jour)</label>
+                            <input type="number" name="prix_min" id="prix_min" min="0" step="10"
+                                   value="<?= $prix_min > 0 ? $prix_min : '' ?>" placeholder="0">
+                        </div>
+
+                        <div class="filter-group">
+                            <label for="prix_max">Prix maximum (€/jour)</label>
+                            <input type="number" name="prix_max" id="prix_max" min="0" step="10"
+                                   value="<?= $prix_max > 0 ? $prix_max : '' ?>" placeholder="1000">
+                        </div>
+
+                        <div class="filter-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrer
+                            </button>
+                            <a href="cars.php" class="btn btn-outline">
+                                <i class="fas fa-undo"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Section -->
+            <div class="results-count">
+                <p><i class="fas fa-car"></i> <?= $carCount ?> voiture(s) trouvée(s)</p>
+                <?php if (!empty($marque) || !empty($type) || !empty($gear) || $prix_min > 0 || $prix_max > 0 || $places > 0): ?>
+                    <p class="active-filters">
+                        <i class="fas fa-filter"></i> Filtres actifs:
+                        <?php
+                        $active_filters = [];
+                        if (!empty($marque)) $active_filters[] = "Marque: $marque";
+                        if (!empty($type)) $active_filters[] = "Type: $type";
+                        if (!empty($gear)) $active_filters[] = "Boîte: $gear";
+                        if ($prix_min > 0) $active_filters[] = "Prix min: {$prix_min}€";
+                        if ($prix_max > 0) $active_filters[] = "Prix max: {$prix_max}€";
+                        if ($places > 0) $active_filters[] = "Places: $places";
+                        echo implode(", ", $active_filters);
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+
+            <!-- Cars Grid -->
+            <div class="cars-grid">
+                <?php if ($carCount > 0): ?>
+                    <?php while($car = mysqli_fetch_assoc($result)): ?>
+                        <div class="car-card">
+                            <div class="car-image">
+                                <img src="<?= htmlspecialchars($car['image'] ?: 'no-image.jpg') ?>" alt="<?= htmlspecialchars($car['marque'] . ' ' . $car['modele']) ?>">
+                                <div class="car-status <?= $car['statut'] ?>"><?= ucfirst($car['statut']) ?></div>
+                            </div>
+
+                            <div class="car-info">
+                                <div class="car-title">
+                                    <h3><?= htmlspecialchars($car['marque'] . ' ' . $car['modele']) ?></h3>
+                                    <p class="car-immatriculation"><?= htmlspecialchars($car['immatriculation']) ?></p>
+                                </div>
+
+                                <div class="car-features">
+                                    <div class="feature">
+                                        <i class="fas fa-gas-pump"></i>
+                                        <span><?= htmlspecialchars($car['type']) ?></span>
+                                    </div>
+                                    <div class="feature">
+                                        <i class="fas fa-users"></i>
+                                        <span><?= $car['nb_places'] ?> places</span>
+                                    </div>
+                                    <div class="feature">
+                                        <i class="fas fa-cogs"></i>
+                                        <span><?= htmlspecialchars($car['gear']) ?></span>
+                                    </div>
+                                </div>
+
+                                <div class="car-price">
+                                    <div class="price-tag">
+                                        <span class="price"><?= $car['prix_par_jour'] ?> €</span>
+                                        <span class="period">/ jour</span>
+                                    </div>
+                                    <a href="reservation.php?id=<?= $car['id_voiture'] ?>" class="btn btn-success">
+                                        <i class="fas fa-calendar-check"></i> Réserver
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endwhile; ?>
+                <?php else: ?>
+                    <div class="no-results"><i class="fas fa-search"></i> Aucune voiture disponible avec ces critères.</div>
+                <?php endif; ?>
+            </div>
         </div>
-        
-        <div>
-            <label>Boîte:</label>
-            <select name="gear">
-                <option value="">Toutes</option>
-                <?php while($g = mysqli_fetch_assoc($gears)): ?>
-                    <option value="<?= $g['gear'] ?>" <?= ($gear == $g['gear']) ? 'selected' : '' ?>>
-                        <?= $g['gear'] ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
-        </div>
-        
-        <div>
-            <label>Places:</label>
-            <select name="nb_places">
-                <option value="">Toutes</option>
-                <?php while($p = mysqli_fetch_assoc($places_options)): ?>
-                    <option value="<?= $p['nb_places'] ?>" <?= ($places == $p['nb_places']) ? 'selected' : '' ?>>
-                        <?= $p['nb_places'] ?>
-                    </option>
-                <?php endwhile; ?>
-            </select>
-        </div>
-        
-        <div>
-            <label>Prix min:</label>
-            <input type="number" name="prix_min" value="<?= $prix_min ?>">
-        </div>
-        
-        <div>
-            <label>Prix max:</label>
-            <input type="number" name="prix_max" value="<?= $prix_max ?>">
-        </div>
-        
-        <button type="submit">Filtrer</button>
-        <a href="cars.php">Reset</a>
-    </form>
-    
-    <p><?= $carCount ?> voitures trouvées</p>
-    
-    <!-- Cars list -->
-    <div class="cars">
-        <?php if ($carCount > 0): ?>
-            <?php while($car = mysqli_fetch_assoc($result)): ?>
-                <div class="car">
-                    <img src="<?= $car['image'] ?>" alt="<?= $car['marque'] ?>">
-                    <h3><?= $car['marque'] ?> <?= $car['modele'] ?></h3>
-                    <p>Prix: <?= $car['prix_par_jour'] ?>€/jour</p>
-                    <p>Places: <?= $car['nb_places'] ?></p>
-                    <p>Boîte: <?= $car['gear'] ?></p>
-                    <p>Statut: <?= $car['statut'] ?></p>
-                    <a href="reservation.php?id=<?= $car['id_voiture'] ?>">Réserver</a>
-                </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <p>Aucune voiture trouvée</p>
-        <?php endif; ?>
-    </div>
-     <script src="assets/js/main.js"></script>
-    <?php include 'includes/footer.php'; ?>
+    </section>
+
+     <?php include 'includes/footer.php'; ?>
+    <script src="assets/js/main.js"></script>
+
+    <?php mysqli_close($conn); ?>
+
 </body>
 </html>
