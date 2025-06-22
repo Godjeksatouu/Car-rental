@@ -3,198 +3,117 @@ session_start();
 include 'includes/config.php';
 include 'includes/functions.php';
 
-// Prevent caching to ensure fresh data
-header("Cache-Control: no-cache, no-store, must-revalidate");
-header("Pragma: no-cache");
-header("Expires: 0");
-
 // Check if user is logged in
-if (!isLoggedIn()) {
-    redirectWithMessage('login.php?redirect=' . urlencode('reservation.php?id=' . ($_GET['id'] ?? '')), 'Veuillez vous connecter pour réserver', 'error');
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
 }
 
-// Check if car ID is provided
-if (!isset($_GET['id']) || empty($_GET['id'])) {
-    redirectWithMessage('cars.php', 'Identifiant de voiture invalide', 'error');
-}
-
-$carId = (int)$_GET['id'];
+// Get user ID from session
 $userId = $_SESSION['user_id'];
 
-// Get car details
-$query = "SELECT * FROM VOITURE WHERE id_voiture = ?";
-$stmt = mysqli_prepare($conn, $query);
-mysqli_stmt_bind_param($stmt, "i", $carId);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
+// Get user details from database
+$userQuery = "SELECT * FROM client WHERE id_client = $userId";
+$userResult = mysqli_query($conn, $userQuery);
+$user = mysqli_fetch_assoc($userResult);
 
-if (mysqli_num_rows($result) === 0) {
-    redirectWithMessage('cars.php', 'Voiture non trouvée', 'error');
-}
-
-$car = mysqli_fetch_assoc($result);
-
-// Check if car is available (only block maintenance, not reserved status)
-if ($car['statut'] === 'maintenance') {
-    redirectWithMessage('car-details.php?id=' . $carId, 'Cette voiture est en maintenance et n\'est pas disponible à la location', 'error');
-}
-
-// Get user details
-$query = "SELECT * FROM CLIENT WHERE id_client = ?";
-$stmt = mysqli_prepare($conn, $query);
-mysqli_stmt_bind_param($stmt, "i", $userId);
-mysqli_stmt_execute($stmt);
-$result = mysqli_stmt_get_result($stmt);
-$user = mysqli_fetch_assoc($result);
-
-// Initialize user fields with default values if they don't exist
+// Now you can safely use these variables
 $userNom = isset($user['nom']) ? $user['nom'] : '';
 $userEmail = isset($user['email']) ? $user['email'] : '';
 $userTelephone = isset($user['téléphone']) ? $user['téléphone'] : '';
+$dateDebut = isset($dateDebut) ? $dateDebut : '';
+$dateFin = isset($dateFin) ? $dateFin : '';
+$totalPrice = isset($totalPrice) ? $totalPrice : 0;
 
+// Check if car ID is provided
+if (!isset($_GET['id']) || empty($_GET['id'])) {
+    header("Location: cars.php");
+    exit();
+}
+
+$carId = (int)$_GET['id'];
+
+// Get car details
+$carQuery = "SELECT * FROM voiture WHERE id_voiture = $carId";
+$carResult = mysqli_query($conn, $carQuery);
+
+if (mysqli_num_rows($carResult) === 0) {
+    header("Location: cars.php");
+    exit();
+}
+
+$car = mysqli_fetch_assoc($carResult);
+
+// Check if car is available
+if ($car['statut'] === 'maintenance') {
+    header("Location: car-details.php?id=$carId");
+    exit();
+}
+
+// Process form
 $errors = [];
-$dateDebut = $dateFin = "";
-$totalPrice = 0;
-
-// Process reservation form
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $dateDebut = sanitize($_POST["date_debut"]);
-    $dateFin = sanitize($_POST["date_fin"]);
+    $dateDebut = $_POST["date_debut"];
+    $dateFin = $_POST["date_fin"];
     
-    // Validate dates
+    // Simple validation
     if (empty($dateDebut)) {
         $errors[] = "Date de début est requise";
     }
-    
     if (empty($dateFin)) {
         $errors[] = "Date de fin est requise";
     }
     
-    if (!empty($dateDebut) && !empty($dateFin)) {
+    if (empty($errors)) {
         $today = date('Y-m-d');
-        $start = new DateTime($dateDebut);
-        $end = new DateTime($dateFin);
-        $interval = $start->diff($end);
-        
         if ($dateDebut < $today) {
             $errors[] = "La date de début ne peut pas être dans le passé";
         }
-        
         if ($dateFin < $dateDebut) {
             $errors[] = "La date de fin doit être après la date de début";
-        }
-        
-        // Check if car is available for the selected dates
-        if (!isCarAvailable($carId, $dateDebut, $dateFin, $conn)) {
-            $errors[] = "La voiture n'est pas disponible pour les dates sélectionnées";
         }
     }
     
     // If no errors, create reservation
     if (empty($errors)) {
-        // Calculate total price
-        $totalPrice = calculateRentalPrice($carId, $dateDebut, $dateFin, $conn);
+        // Calculate number of days
+        $start = new DateTime($dateDebut);
+        $end = new DateTime($dateFin);
+        $days = $start->diff($end)->days + 1;
+        $totalPrice = $days * $car['prix_par_jour'];
         
-        // Start transaction
-        mysqli_begin_transaction($conn);
+        // Create reservation
+        $insertQuery = "INSERT INTO reservation (id_client, date_debut, date_fin, id_voiture) 
+                         VALUES ($userId, '$dateDebut', '$dateFin', $carId)";
+        mysqli_query($conn, $insertQuery);
         
-        try {
-            // Create reservation
-            $query = "INSERT INTO RESERVATION (id_client, date_debut, date_fin, id_voiture) VALUES (?, ?, ?, ?)";
-            $stmt = mysqli_prepare($conn, $query);
-            mysqli_stmt_bind_param($stmt, "issi", $userId, $dateDebut, $dateFin, $carId);
-            mysqli_stmt_execute($stmt);
-            
-            $reservationId = mysqli_insert_id($conn);
-            
-            // Create location
-            $query = "INSERT INTO LOCATION (id_reservation, ETAT_PAIEMENT) VALUES (?, 0)";
-            $stmt = mysqli_prepare($conn, $query);
-            mysqli_stmt_bind_param($stmt, "i", $reservationId);
-            mysqli_stmt_execute($stmt);
-            
-            // Note: We don't update car status to 'réservé' globally anymore
-            // Cars are only unavailable for specific dates, not entirely
-            // The car remains 'disponible' for other dates
-            
-            // Commit transaction
-            mysqli_commit($conn);
-            
-            redirectWithMessage('profile.php', 'Votre réservation a été enregistrée avec succès', 'success');
-        } catch (Exception $e) {
-            // Rollback transaction
-            mysqli_rollback($conn);
-            $errors[] = "Erreur lors de la réservation: " . $e->getMessage();
-        }
+        header("Location: profile.php");
+        exit();
     }
 }
 
-// Calculate price estimate if dates are provided
-if (!empty($dateDebut) && !empty($dateFin)) {
-    $totalPrice = calculateRentalPrice($carId, $dateDebut, $dateFin, $conn);
-}
-
-// Get all reserved dates for this car to block them in the calendar
-function getReservedDatesForCar($carId, $conn) {
-    $reservedDates = [];
-
-    // Get all reservations for this car that are not cancelled
-    $query = "SELECT date_debut, date_fin FROM RESERVATION
-              WHERE id_voiture = ?
-              AND date_fin >= CURDATE()
-              ORDER BY date_debut ASC";
-
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $carId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        $startDate = new DateTime($row['date_debut']);
-        $endDate = new DateTime($row['date_fin']);
-
-        // Generate all dates in the range
-        $currentDate = clone $startDate;
-        while ($currentDate <= $endDate) {
-            $reservedDates[] = $currentDate->format('Y-m-d');
-            $currentDate->add(new DateInterval('P1D'));
-        }
+// Get reserved dates for calendar
+$reservedDates = [];
+$reservationPeriods = [];
+$reservedQuery = "SELECT r.date_debut, r.date_fin, c.nom as client FROM reservation r
+                  JOIN client c ON r.id_client = c.id_client
+                  WHERE r.id_voiture = $carId AND r.date_fin >= CURDATE()";
+$reservedResult = mysqli_query($conn, $reservedQuery);
+while ($row = mysqli_fetch_assoc($reservedResult)) {
+    $start = new DateTime($row['date_debut']);
+    $end = new DateTime($row['date_fin']);
+    $current = clone $start;
+    $reservationPeriods[] = [
+        'start' => $row['date_debut'],
+        'end' => $row['date_fin'],
+        'client' => $row['client']
+    ];
+    while ($current <= $end) {
+        $reservedDates[] = $current->format('Y-m-d');
+        $current->add(new DateInterval('P1D'));
     }
-
-    return array_unique($reservedDates);
 }
-
-// Get reserved dates for this specific car
-$reservedDates = getReservedDatesForCar($carId, $conn);
-
-// Also get reservation periods for better display
-function getReservationPeriods($carId, $conn) {
-    $periods = [];
-
-    $query = "SELECT r.date_debut, r.date_fin, c.nom, c.prénom
-              FROM RESERVATION r
-              JOIN CLIENT c ON r.id_client = c.id_client
-              WHERE r.id_voiture = ?
-              AND r.date_fin >= CURDATE()
-              ORDER BY r.date_debut ASC";
-
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, "i", $carId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-
-    while ($row = mysqli_fetch_assoc($result)) {
-        $periods[] = [
-            'start' => $row['date_debut'],
-            'end' => $row['date_fin'],
-            'client' => $row['prénom'] . ' ' . substr($row['nom'], 0, 1) . '.'
-        ];
-    }
-
-    return $periods;
-}
-
-$reservationPeriods = getReservationPeriods($carId, $conn);
+$reservedDates = array_unique($reservedDates);
 ?>
 
 <!DOCTYPE html>
@@ -207,9 +126,8 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Litepicker CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/litepicker/dist/css/litepicker.css">
-
     <style>
-        /* Custom Litepicker Styles */
+  /* Custom Litepicker Styles */
         .date-picker-container {
             position: relative;
             display: flex;
@@ -671,7 +589,6 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
             }
         }
     </style>
-
 </head>
 <body>
     <?php include 'includes/header.php'; ?>
@@ -727,21 +644,6 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                             <label for="telephone">Téléphone</label>
                             <input type="tel" id="telephone" name="telephone" value="<?php echo htmlspecialchars($userTelephone); ?>" readonly>
                         </div>
-
-                        <!-- Car-specific blocking indicator -->
-                        <div class="car-specific-info" style="background: #e3f2fd; border: 1px solid #90caf9; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-                            <h4 style="margin: 0 0 8px 0; color: #1565c0; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-info-circle"></i>
-                                Calendrier spécifique à ce véhicule
-                            </h4>
-                            <p style="margin: 0; color: #1565c0; font-size: 0.9rem;">
-                                <strong>Véhicule:</strong> <?php echo htmlspecialchars($car['marque'] . ' ' . $car['modele']); ?> (ID: <?php echo $carId; ?>)<br>
-                                Les dates bloquées ci-dessous sont uniquement pour ce véhicule. D'autres véhicules peuvent être disponibles pour ces mêmes dates.
-                            </p>
-                        </div>
-
-
-
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="date_range">Sélectionnez vos dates*</label>
@@ -749,14 +651,10 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                                     <input type="text" id="date_range" placeholder="Cliquez pour sélectionner les dates" readonly>
                                     <i class="fas fa-calendar-alt date-picker-icon"></i>
                                 </div>
-
-                                <!-- Date status indicator -->
                                 <div id="date-status" class="date-status" style="display: none;">
                                     <i class="fas fa-check-circle"></i>
                                     <span id="date-status-text">Dates sélectionnées</span>
                                 </div>
-
-                                <!-- Manual date inputs (fallback) -->
                                 <div id="manual-dates" class="manual-dates" style="display: none;">
                                     <p><small>Ou saisissez les dates manuellement :</small></p>
                                     <div class="manual-date-inputs">
@@ -770,18 +668,13 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                                         </div>
                                     </div>
                                 </div>
-
-                                <!-- Toggle manual input -->
                                 <button type="button" id="toggle-manual" class="toggle-manual-btn">
                                     <i class="fas fa-keyboard"></i> Saisie manuelle
                                 </button>
-
-                                <!-- Hidden inputs for form submission -->
                                 <input type="hidden" id="date_debut" name="date_debut" value="<?php echo htmlspecialchars($dateDebut); ?>" required>
                                 <input type="hidden" id="date_fin" name="date_fin" value="<?php echo htmlspecialchars($dateFin); ?>" required>
                             </div>
                         </div>
-                        
                         <div class="price-estimate" id="priceEstimate" style="<?php echo $totalPrice > 0 ? 'display: block;' : 'display: none;'; ?>">
                             <h3>Estimation du prix</h3>
                             <div class="price-details">
@@ -810,7 +703,6 @@ $reservationPeriods = getReservationPeriods($carId, $conn);
                                 </div>
                             </div>
                         </div>
-                        
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary btn-block">Confirmer la réservation</button>
                             <a href="cars.php" class="btn btn-outline btn-block">Retour aux voitures</a>
