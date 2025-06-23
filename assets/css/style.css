@@ -119,40 +119,7 @@ nav ul li a:hover {
     color: var(--primary-color);
 }
 
-/* Hero Section */
-.hero {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.pexels.com/photos/1213294/pexels-photo-1213294.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
-    background-size: cover;
-    background-position: center;
-    color: var(--white);
-    text-align: center;
-    padding: 120px 0;
-}
-
-.hero-content {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 0 16px;
-}
-
-.hero h1 {
-    font-size: 3rem;
-    margin-bottom: 16px;
-    animation: fadeInDown 1s ease-out;
-}
-
-.hero p {
-    font-size: 1.2rem;
-    margin-bottom: 32px;
-    animation: fadeInUp 1s ease-out;
-}
-
-.search-box {
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: var(--border-radius);
-    padding: 24px;
-    animation: fadeIn 1.2s ease-out;
-}
+/* Global Styles - Hero sections moved to individual page CSS files */
 
 /* Featured Cars */
 .featured-cars {

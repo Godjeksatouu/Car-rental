@@ -9,76 +9,35 @@ if (!isAdmin()) {
     exit();
 }
 
-// Handle search and filtering
-$search = isset($_GET['search']) ? sanitize($_GET['search']) : '';
-$status_filter = isset($_GET['status']) ? sanitize($_GET['status']) : '';
+// Handle pagination
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 10;
 $offset = ($page - 1) * $limit;
 
-// Build the query with filters
-$where_conditions = [];
-$params = [];
-$param_types = '';
-
-if (!empty($search)) {
-    $where_conditions[] = "(c.nom LIKE ? OR c.prénom LIKE ? OR c.email LIKE ? OR v.marque LIKE ? OR v.modele LIKE ? OR v.immatriculation LIKE ?)";
-    $search_param = "%$search%";
-    $params = array_merge($params, [$search_param, $search_param, $search_param, $search_param, $search_param, $search_param]);
-    $param_types .= 'ssssss';
-}
-
-if (!empty($status_filter)) {
-    if ($status_filter === 'paid') {
-        $where_conditions[] = "l.ETAT_PAIEMENT = 1";
-    } elseif ($status_filter === 'unpaid') {
-        $where_conditions[] = "l.ETAT_PAIEMENT = 0";
-    }
-}
-
-$where_clause = !empty($where_conditions) ? 'WHERE ' . implode(' AND ', $where_conditions) : '';
-
 // Get total count for pagination
-$count_query = "SELECT COUNT(*) as total 
-                FROM LOCATION l 
-                JOIN RESERVATION r ON l.id_reservation = r.id_reservation 
-                JOIN CLIENT c ON r.id_client = c.id_client 
-                JOIN VOITURE v ON r.id_voiture = v.id_voiture 
-                $where_clause";
+$count_query = "SELECT COUNT(*) as total
+                FROM LOCATION l
+                JOIN RESERVATION r ON l.id_reservation = r.id_reservation
+                JOIN CLIENT c ON r.id_client = c.id_client
+                JOIN VOITURE v ON r.id_voiture = v.id_voiture";
 
-if (!empty($params)) {
-    $count_stmt = mysqli_prepare($conn, $count_query);
-    mysqli_stmt_bind_param($count_stmt, $param_types, ...$params);
-    mysqli_stmt_execute($count_stmt);
-    $count_result = mysqli_stmt_get_result($count_stmt);
-} else {
-    $count_result = mysqli_query($conn, $count_query);
-}
-
+$count_result = mysqli_query($conn, $count_query);
 $total_records = mysqli_fetch_assoc($count_result)['total'];
 $total_pages = ceil($total_records / $limit);
 
 // Get locations with pagination
-$query = "SELECT l.*, r.*, c.nom, c.prénom, c.email, c.téléphone, 
+$query = "SELECT l.*, r.*, c.nom, c.prénom, c.email, c.téléphone,
                  v.marque, v.modele, v.immatriculation, v.prix_par_jour,
                  p.montant, p.date_paiement, p.mode_paiement
-          FROM LOCATION l 
-          JOIN RESERVATION r ON l.id_reservation = r.id_reservation 
-          JOIN CLIENT c ON r.id_client = c.id_client 
-          JOIN VOITURE v ON r.id_voiture = v.id_voiture 
-          LEFT JOIN PAIEMENT p ON l.id_location = p.id_location 
-          $where_clause
-          ORDER BY r.date_debut DESC 
+          FROM LOCATION l
+          JOIN RESERVATION r ON l.id_reservation = r.id_reservation
+          JOIN CLIENT c ON r.id_client = c.id_client
+          JOIN VOITURE v ON r.id_voiture = v.id_voiture
+          LEFT JOIN PAIEMENT p ON l.id_location = p.id_location
+          ORDER BY r.date_debut DESC
           LIMIT $limit OFFSET $offset";
 
-if (!empty($params)) {
-    $stmt = mysqli_prepare($conn, $query);
-    mysqli_stmt_bind_param($stmt, $param_types, ...$params);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-} else {
-    $result = mysqli_query($conn, $query);
-}
+$result = mysqli_query($conn, $query);
 
 $locations = [];
 while ($row = mysqli_fetch_assoc($result)) {
@@ -93,6 +52,9 @@ while ($row = mysqli_fetch_assoc($result)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Locations - AutoDrive Admin</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-common.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/locations.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -105,34 +67,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                 <p>Visualisez et gérez toutes les locations actives</p>
             </div>
 
-            <!-- Search and Filter Form -->
-            <div class="admin-card">
-                <div class="admin-card-body">
-                    <form method="GET" class="search-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <input type="text" name="search" placeholder="Rechercher par client, voiture, immatriculation..." 
-                                       value="<?php echo htmlspecialchars($search); ?>" class="form-control">
-                            </div>
-                            <div class="form-group">
-                                <select name="status" class="form-control">
-                                    <option value="">Tous les statuts</option>
-                                    <option value="paid" <?php echo $status_filter === 'paid' ? 'selected' : ''; ?>>Payé</option>
-                                    <option value="unpaid" <?php echo $status_filter === 'unpaid' ? 'selected' : ''; ?>>Non payé</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-search"></i> Rechercher
-                                </button>
-                                <a href="locations.php" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i> Réinitialiser
-                                </a>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+
 
             <!-- Statistics Summary -->
             <div class="stats-grid">
@@ -299,22 +234,20 @@ while ($row = mysqli_fetch_assoc($result)) {
                 <div class="pagination-wrapper">
                     <nav class="pagination">
                         <?php if ($page > 1): ?>
-                            <a href="?page=<?php echo $page - 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
-                               class="pagination-btn">
+                            <a href="?page=<?php echo $page - 1; ?>" class="pagination-btn">
                                 <i class="fas fa-chevron-left"></i> Précédent
                             </a>
                         <?php endif; ?>
 
                         <?php for ($i = max(1, $page - 2); $i <= min($total_pages, $page + 2); $i++): ?>
-                            <a href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
+                            <a href="?page=<?php echo $i; ?>"
                                class="pagination-btn <?php echo $i === $page ? 'active' : ''; ?>">
                                 <?php echo $i; ?>
                             </a>
                         <?php endfor; ?>
 
                         <?php if ($page < $total_pages): ?>
-                            <a href="?page=<?php echo $page + 1; ?>&search=<?php echo urlencode($search); ?>&status=<?php echo urlencode($status_filter); ?>" 
-                               class="pagination-btn">
+                            <a href="?page=<?php echo $page + 1; ?>" class="pagination-btn">
                                 Suivant <i class="fas fa-chevron-right"></i>
                             </a>
                         <?php endif; ?>

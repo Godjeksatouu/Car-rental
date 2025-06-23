@@ -1,18 +1,5 @@
 /* Locations Page Styles */
 
-/* Search Form Styles */
-.search-form .form-row {
-    display: flex;
-    gap: 1rem;
-    align-items: end;
-    flex-wrap: wrap;
-}
-
-.search-form .form-group {
-    flex: 1;
-    min-width: 200px;
-}
-
 /* Client and Car Info Styles */
 .client-info, .car-info, .date-info {
     line-height: 1.4;
@@ -130,14 +117,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-    .search-form .form-row {
-        flex-direction: column;
-    }
-    
-    .search-form .form-group {
-        min-width: 100%;
-    }
-    
     .locations-table .client-info,
     .locations-table .car-info,
     .locations-table .date-info {

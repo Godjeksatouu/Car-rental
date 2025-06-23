@@ -1,0 +1,332 @@
+/* Homepage Styles */
+
+/* Hero Section */
+.hero {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), 
+                      url('https://images.pexels.com/photos/1213294/pexels-photo-1213294.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1');
+    background-size: cover;
+    background-position: center;
+    color: var(--white);
+    text-align: center;
+    padding: 120px 0;
+}
+
+.hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.hero h1 {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    animation: fadeInDown 1s ease-out;
+}
+
+.hero p {
+    font-size: 1.2rem;
+    margin-bottom: 32px;
+    animation: fadeInUp 1s ease-out;
+}
+
+.search-box {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    animation: fadeIn 1.2s ease-out;
+}
+
+.search-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.search-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.search-group label {
+    color: var(--gray-700);
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.search-group input,
+.search-group select {
+    padding: 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 1rem;
+}
+
+.search-btn {
+    padding: 12px 24px;
+    background-color: var(--primary-color);
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.search-btn:hover {
+    background-color: var(--primary-dark);
+}
+
+/* Features Section */
+.features {
+    padding: 80px 0;
+    background-color: var(--white);
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 40px;
+    margin-top: 60px;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 40px 20px;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.feature-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    background-color: var(--primary-color);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    color: var(--white);
+    font-size: 2rem;
+}
+
+.feature-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 16px;
+    color: var(--gray-800);
+}
+
+.feature-card p {
+    color: var(--gray-600);
+    line-height: 1.6;
+}
+
+/* Featured Cars Section */
+.featured-cars {
+    padding: 80px 0;
+    background-color: var(--bg-color);
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-header h2 {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+    color: var(--gray-800);
+}
+
+.section-header p {
+    font-size: 1.1rem;
+    color: var(--gray-600);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.cars-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    margin-bottom: 40px;
+}
+
+/* CTA Section */
+.cta {
+    padding: 80px 0;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--white);
+    text-align: center;
+}
+
+.cta-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+}
+
+.cta-content p {
+    font-size: 1.2rem;
+    margin-bottom: 32px;
+    opacity: 0.9;
+}
+
+.btn-light {
+    background-color: var(--white);
+    color: var(--primary-color);
+    padding: 16px 32px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: var(--transition);
+}
+
+.btn-light:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    color: var(--primary-color);
+}
+
+/* Statistics Section */
+.stats {
+    padding: 60px 0;
+    background-color: var(--white);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 40px;
+    text-align: center;
+}
+
+.stat-item {
+    padding: 20px;
+}
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.stat-label {
+    font-size: 1.1rem;
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero p {
+        font-size: 1.1rem;
+    }
+    
+    .search-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .feature-card {
+        padding: 30px 20px;
+    }
+    
+    .section-header h2 {
+        font-size: 2rem;
+    }
+    
+    .cta-content h2 {
+        font-size: 2rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+    }
+}
+
+@media (max-width: 576px) {
+    .hero {
+        padding: 80px 0;
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
+    
+    .search-box {
+        padding: 20px;
+    }
+    
+    .features {
+        padding: 60px 0;
+    }
+    
+    .featured-cars {
+        padding: 60px 0;
+    }
+    
+    .cta {
+        padding: 60px 0;
+    }
+    
+    .stats {
+        padding: 40px 0;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+    }
+}

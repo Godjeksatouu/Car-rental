@@ -43,6 +43,8 @@ while ($row = mysqli_fetch_assoc($carsStatus)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Admin - AutoDrive</title>
     <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../assets/css/admin-common.css">
+    <link rel="stylesheet" href="../assets/css/dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
