@@ -18,7 +18,6 @@ include_once __DIR__ . '/../../includes/functions.php';
                 <li><a href="clients.php"><i class="fas fa-users"></i> Clients</a></li>
                 <li><a href="reservations.php"><i class="fas fa-calendar-alt"></i> Réservations</a></li>
                 <li><a href="locations.php"><i class="fas fa-key"></i> Locations</a></li>
-                <li><a href="payments.php"><i class="fas fa-money-bill-wave"></i> Paiements</a></li>
             </ul>
         </nav>
         <div class="admin-user">
