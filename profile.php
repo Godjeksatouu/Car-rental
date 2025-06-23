@@ -177,6 +177,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </section>
 
     <?php include 'includes/footer.php'; ?>
-    <script src="assets/js/main.js"></script>
 </body>
 </html>

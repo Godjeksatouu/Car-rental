@@ -710,6 +710,8 @@ nav ul li a:hover {
     color: var(--gray-700);
     border-radius: var(--border-radius);
     transition: all 0.3s ease;
+    text-decoration: none;
+    font-size: 1rem;
 }
 
 .dropdown-btn:hover {
@@ -734,7 +736,13 @@ nav ul li a:hover {
     background-color: var(--white);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-md);
-    z-index: 10;
+    z-index: 1000;
+    border: 1px solid var(--gray-200);
+    margin-top: 4px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease-out;
+    pointer-events: none;
 }
 
 .dropdown-content a {
@@ -743,12 +751,19 @@ nav ul li a:hover {
     padding: 12px 16px;
     color: var(--gray-700);
     transition: var(--transition);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.dropdown-content a:last-child {
+    border-bottom: none;
 }
 
 .dropdown-content a i {
-    margin-right: 8px;
+    margin-right: 12px;
     width: 20px;
     text-align: center;
+    font-size: 0.9rem;
 }
 
 .dropdown-content a:hover {
@@ -756,17 +771,32 @@ nav ul li a:hover {
     color: var(--primary-color);
 }
 
-/* Active dropdown state */
-.dropdown.active .dropdown-content {
-    display: block;
-    animation: dropdownFadeIn 0.2s ease-out;
+.dropdown-content a:first-child {
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
 }
 
+.dropdown-content a:last-child {
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+}
+
+/* Hover dropdown state */
+.dropdown:hover .dropdown-content,
+.dropdown.active .dropdown-content {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.dropdown:hover .dropdown-btn,
 .dropdown.active .dropdown-btn {
     background-color: var(--gray-100);
     color: var(--primary-color);
 }
 
+.dropdown:hover .dropdown-btn .fa-chevron-down,
 .dropdown.active .dropdown-btn .fa-chevron-down {
     transform: rotate(180deg);
 }
@@ -854,9 +884,35 @@ nav ul li a:hover {
     nav, .user-actions .btn {
         display: none;
     }
-    
+
     .mobile-menu-btn {
         display: block;
+    }
+
+    .dropdown-content {
+        right: -10px;
+        min-width: 180px;
+        margin-top: 8px;
+    }
+
+    .dropdown-content a {
+        padding: 12px 16px;
+        font-size: 0.9rem;
+    }
+
+    /* On mobile, use click instead of hover */
+    .dropdown:hover .dropdown-content {
+        display: none;
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+    }
+
+    .dropdown.active .dropdown-content {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
     }
 }
 /* Footer Styles */

@@ -226,7 +226,6 @@ $places_options = mysqli_query($conn, "SELECT DISTINCT nb_places FROM voiture OR
     </section>
 
      <?php include 'includes/footer.php'; ?>
-    <script src="assets/js/main.js"></script>
 
     <?php mysqli_close($conn); ?>
 
