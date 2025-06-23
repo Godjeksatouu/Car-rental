@@ -352,22 +352,6 @@ $reservedDates = array_unique($reservedDates);
             font-size: 0.9rem;
         }
 
-        .toggle-manual-btn {
-            margin-top: 10px;
-            padding: 8px 16px;
-            background: transparent;
-            border: 1px solid #6c757d;
-            border-radius: 4px;
-            color: #6c757d;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .toggle-manual-btn:hover {
-            background: #6c757d;
-            color: white;
-        }
 
         /* Reserved dates information styles */
         .reserved-dates-info {
@@ -615,22 +599,7 @@ $reservedDates = array_unique($reservedDates);
                                 <input type="text" id="date_range" placeholder="Cliquez pour sélectionner les dates" readonly>
                                 <i class="fas fa-calendar-alt date-picker-icon"></i>
                             </div>
-                            <div id="manual-dates" class="manual-dates" style="display: none;">
-                                <p><small>Ou saisissez les dates manuellement :</small></p>
-                                <div class="manual-date-inputs">
-                                    <div class="manual-date-group">
-                                        <label for="manual_start">Date de début:</label>
-                                        <input type="date" id="manual_start" min="<?php echo date('Y-m-d'); ?>">
-                                    </div>
-                                    <div class="manual-date-group">
-                                        <label for="manual_end">Date de fin:</label>
-                                        <input type="date" id="manual_end" min="<?php echo date('Y-m-d'); ?>">
-                                    </div>
-                                </div>
                             </div>
-                            <button type="button" id="toggle-manual" class="toggle-manual-btn">
-                                <i class="fas fa-keyboard"></i> Saisie manuelle
-                            </button>
                             <input type="hidden" id="date_debut" name="date_debut" value="<?php echo htmlspecialchars($dateDebut); ?>" required>
                             <input type="hidden" id="date_fin" name="date_fin" value="<?php echo htmlspecialchars($dateFin); ?>" required>
                         </div>
@@ -716,23 +685,6 @@ document.addEventListener('DOMContentLoaded', function() {
         totalPrice.textContent = (pricePerDay * diffDays).toFixed(2) + ' €';
         priceEstimate.style.display = 'block';
     }
-
-    // Manual date input
-    document.getElementById('toggle-manual').onclick = function() {
-        const manual = document.getElementById('manual-dates');
-        manual.style.display = manual.style.display === 'block' ? 'none' : 'block';
-    };
-    document.getElementById('manual_start').onchange = document.getElementById('manual_end').onchange = function() {
-        const s = document.getElementById('manual_start').value;
-        const e = document.getElementById('manual_end').value;
-        if (s && e) {
-            document.getElementById('date_debut').value = s;
-            document.getElementById('date_fin').value = e;
-            document.getElementById('date_range').value = new Date(s).toLocaleDateString('fr-FR') + ' - ' + new Date(e).toLocaleDateString('fr-FR');
-            updatePriceEstimate(new Date(s), new Date(e));
-        }
-    };
-
     // Form validation
     document.getElementById('reservationForm').onsubmit = function(e) {
         const s = document.getElementById('date_debut').value;
