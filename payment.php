@@ -10,11 +10,16 @@ if (!isLoggedIn()) {
 
 // Check if location ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
-    redirectWithMessage('profile.php', 'Identifiant de location invalide', 'error');
+    redirectWithMessage('reservations.php', 'Identifiant de location invalide. Veuillez accéder au paiement depuis vos réservations.', 'error');
 }
 
 $locationId = (int)$_GET['id'];
 $userId = $_SESSION['user_id'];
+
+// Validate that location ID is a positive integer
+if ($locationId <= 0) {
+    redirectWithMessage('reservations.php', 'Identifiant de location invalide.', 'error');
+}
 
 // Get location and reservation details
 $query = "SELECT l.*, r.*, v.marque, v.modele, v.prix_par_jour, c.nom, c.prénom 
@@ -30,14 +35,14 @@ mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
 if (mysqli_num_rows($result) === 0) {
-    redirectWithMessage('profile.php', 'Location non trouvée ou accès non autorisé', 'error');
+    redirectWithMessage('reservations.php', 'Location non trouvée ou accès non autorisé. Veuillez vérifier vos réservations.', 'error');
 }
 
 $location = mysqli_fetch_assoc($result);
 
 // Check if already paid
 if ($location['ETAT_PAIEMENT'] == 1) {
-    redirectWithMessage('profile.php', 'Cette réservation est déjà payée', 'info');
+    redirectWithMessage('reservations.php', 'Cette réservation est déjà payée. Consultez vos réservations pour plus de détails.', 'info');
 }
 
 // Calculate total amount
@@ -79,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Commit transaction
         mysqli_commit($conn);
         
-        redirectWithMessage('profile.php', 'Paiement confirmé avec succès ! Votre réservation est maintenant payée.', 'success');
+        redirectWithMessage('reservations.php', 'Paiement confirmé avec succès ! Votre réservation est maintenant payée.', 'success');
         
     } catch (Exception $e) {
         // Rollback transaction
@@ -176,9 +181,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <i class="fas fa-lock"></i>
                                     Confirmer le paiement - <?php echo number_format($total_amount, 2); ?>€
                                 </button>
-                                <a href="profile.php" class="btn btn-outline">
+                                <a href="reservations.php" class="btn btn-outline">
                                     <i class="fas fa-arrow-left"></i>
-                                    Retour à mon profil
+                                    Retour à mes réservations
                                 </a>
                             </div>
                         </form>

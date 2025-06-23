@@ -90,6 +90,7 @@ while ($row = mysqli_fetch_assoc($carsStatus)) {
                     <div class="stat-content">
                         <h3><?php echo $stats['locations']; ?></h3>
                         <p>Locations</p>
+                        <a href="locations.php" class="btn btn-sm btn-primary">Voir toutes</a>
                     </div>
                 </div>
             </div>

@@ -118,4 +118,31 @@ function isCarAvailable($car_id, $start, $end, $conn, $exclude_id = null) {
 function formatDate($date) {
     return formatDateForDisplay($date);
 }
+
+// Ensure a LOCATION record exists for a reservation
+function ensureLocationExists($reservation_id, $conn) {
+    // Check if location already exists
+    $check_query = "SELECT id_location FROM LOCATION WHERE id_reservation = ?";
+    $check_stmt = mysqli_prepare($conn, $check_query);
+    mysqli_stmt_bind_param($check_stmt, "i", $reservation_id);
+    mysqli_stmt_execute($check_stmt);
+    $result = mysqli_stmt_get_result($check_stmt);
+
+    if (mysqli_num_rows($result) > 0) {
+        // Location exists, return its ID
+        $location = mysqli_fetch_assoc($result);
+        return $location['id_location'];
+    } else {
+        // Create new location record
+        $insert_query = "INSERT INTO LOCATION (id_reservation, ETAT_PAIEMENT) VALUES (?, 0)";
+        $insert_stmt = mysqli_prepare($conn, $insert_query);
+        mysqli_stmt_bind_param($insert_stmt, "i", $reservation_id);
+
+        if (mysqli_stmt_execute($insert_stmt)) {
+            return mysqli_insert_id($conn);
+        } else {
+            return false;
+        }
+    }
+}
 ?>

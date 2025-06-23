@@ -19,16 +19,30 @@ $result = mysqli_stmt_get_result($stmt);
 $user = mysqli_fetch_assoc($result);
 
 // Get user reservations
-$query = "SELECT r.*, v.marque, v.modele, v.image, v.prix_par_jour, l.ETAT_PAIEMENT, l.id_location 
-          FROM RESERVATION r 
-          JOIN VOITURE v ON r.id_voiture = v.id_voiture 
-          LEFT JOIN LOCATION l ON r.id_reservation = l.id_reservation 
-          WHERE r.id_client = ? 
+$query = "SELECT r.*, v.marque, v.modele, v.image, v.prix_par_jour, l.ETAT_PAIEMENT, l.id_location
+          FROM RESERVATION r
+          JOIN VOITURE v ON r.id_voiture = v.id_voiture
+          LEFT JOIN LOCATION l ON r.id_reservation = l.id_reservation
+          WHERE r.id_client = ?
           ORDER BY r.date_debut DESC";
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "i", $userId);
 mysqli_stmt_execute($stmt);
-$reservations = mysqli_stmt_get_result($stmt);
+$reservations_result = mysqli_stmt_get_result($stmt);
+
+// Process reservations and ensure LOCATION records exist
+$reservations = [];
+while ($reservation = mysqli_fetch_assoc($reservations_result)) {
+    // If reservation doesn't have a location record, create one
+    if (is_null($reservation['id_location'])) {
+        $location_id = ensureLocationExists($reservation['id_reservation'], $conn);
+        if ($location_id) {
+            $reservation['id_location'] = $location_id;
+            $reservation['ETAT_PAIEMENT'] = 0; // Set as unpaid
+        }
+    }
+    $reservations[] = $reservation;
+}
 ?>
 
 <!DOCTYPE html>
@@ -69,8 +83,8 @@ $reservations = mysqli_stmt_get_result($stmt);
                     </div>
                     
                     <div class="reservations-list">
-                        <?php if (mysqli_num_rows($reservations) > 0): ?>
-                            <?php while ($reservation = mysqli_fetch_assoc($reservations)): ?>
+                        <?php if (count($reservations) > 0): ?>
+                            <?php foreach ($reservations as $reservation): ?>
                                 <div class="reservation-card">
                                     <div class="reservation-header">
                                         <h3><?php echo $reservation['marque'] . ' ' . $reservation['modele']; ?></h3>
@@ -151,7 +165,7 @@ $reservations = mysqli_stmt_get_result($stmt);
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                            <?php endwhile; ?>
+                            <?php endforeach; ?>
                         <?php else: ?>
                             <div class="no-reservations">
                                 <i class="fas fa-calendar-times"></i>

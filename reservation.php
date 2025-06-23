@@ -51,14 +51,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($dateFin < $dateDebut) $errors[] = "La date de fin doit être après la date de début";
     }
     if (empty($errors)) {
-        $start = new DateTime($dateDebut);
-        $end = new DateTime($dateFin);
-        $days = $start->diff($end)->days + 1;
-        $totalPrice = $days * $car['prix_par_jour'];
-        $insertQuery = "INSERT INTO reservation (id_client, date_debut, date_fin, id_voiture) VALUES ($userId, '$dateDebut', '$dateFin', $carId)";
-        mysqli_query($conn, $insertQuery);
-        header("Location: reservations.php");
-        exit();
+        // Start transaction
+        mysqli_begin_transaction($conn);
+
+        try {
+            $start = new DateTime($dateDebut);
+            $end = new DateTime($dateFin);
+            $days = $start->diff($end)->days + 1;
+            $totalPrice = $days * $car['prix_par_jour'];
+
+            // Insert reservation using prepared statement (security fix)
+            $insertQuery = "INSERT INTO RESERVATION (id_client, date_debut, date_fin, id_voiture) VALUES (?, ?, ?, ?)";
+            $stmt = mysqli_prepare($conn, $insertQuery);
+            mysqli_stmt_bind_param($stmt, "issi", $userId, $dateDebut, $dateFin, $carId);
+
+            if (!mysqli_stmt_execute($stmt)) {
+                throw new Exception("Erreur lors de la création de la réservation");
+            }
+
+            // Get the newly created reservation ID
+            $reservationId = mysqli_insert_id($conn);
+
+            // Create corresponding LOCATION record
+            $locationQuery = "INSERT INTO LOCATION (id_reservation, ETAT_PAIEMENT) VALUES (?, 0)";
+            $locationStmt = mysqli_prepare($conn, $locationQuery);
+            mysqli_stmt_bind_param($locationStmt, "i", $reservationId);
+
+            if (!mysqli_stmt_execute($locationStmt)) {
+                throw new Exception("Erreur lors de la création de l'enregistrement de location");
+            }
+
+            // Commit transaction
+            mysqli_commit($conn);
+
+            redirectWithMessage('reservations.php', 'Réservation créée avec succès ! Vous pouvez maintenant procéder au paiement.', 'success');
+
+        } catch (Exception $e) {
+            // Rollback transaction
+            mysqli_rollback($conn);
+            $errors[] = $e->getMessage();
+        }
     }
 }
 
