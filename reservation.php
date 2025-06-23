@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $totalPrice = $days * $car['prix_par_jour'];
         $insertQuery = "INSERT INTO reservation (id_client, date_debut, date_fin, id_voiture) VALUES ($userId, '$dateDebut', '$dateFin', $carId)";
         mysqli_query($conn, $insertQuery);
-        header("Location: profile.php");
+        header("Location: reservations.php");
         exit();
     }
 }
