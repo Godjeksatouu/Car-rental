@@ -348,26 +348,112 @@
     margin-top: 1.5rem;
 }
 
+/* Enhanced Table Styles */
+.enhanced-table {
+    font-size: 0.9rem;
+}
+
+.enhanced-table th {
+    background: var(--gray-100);
+    font-weight: 600;
+    color: var(--gray-700);
+    border-bottom: 2px solid var(--gray-200);
+}
+
+.enhanced-table td {
+    vertical-align: middle;
+    padding: 16px 12px;
+}
+
+/* Filters Form */
+.filters-form {
+    background: var(--gray-50);
+    padding: 24px;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--gray-200);
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.filter-group label {
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--gray-700);
+}
+
+.filter-group input,
+.filter-group select {
+    padding: 10px 12px;
+    border: 1px solid var(--gray-300);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 16px;
+}
+
 /* Responsive Utilities */
 @media (max-width: 768px) {
     .admin-table {
         display: block;
         overflow-x: auto;
     }
-    
+
     .admin-table th,
     .admin-table td {
         padding: 10px 12px;
     }
-    
+
     .modal-content {
         width: 95%;
     }
-    
+
     .modal-header,
     .modal-body,
     .modal-footer {
         padding: 1rem;
+    }
+
+    .filter-row {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-actions {
+        justify-content: stretch;
+    }
+
+    .filter-actions .btn {
+        flex: 1;
+    }
+
+    .enhanced-table {
+        font-size: 0.8rem;
+    }
+
+    .enhanced-table td {
+        padding: 12px 8px;
     }
 }
 
@@ -375,12 +461,12 @@
     .admin-table {
         font-size: 0.85rem;
     }
-    
+
     .btn-sm {
         padding: 4px 8px;
         font-size: 0.7rem;
     }
-    
+
     .status-badge {
         font-size: 0.7rem;
         padding: 4px 8px;

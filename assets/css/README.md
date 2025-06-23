@@ -7,6 +7,7 @@ This document describes the organization of CSS files in the AutoDrive car renta
 ```
 assets/css/
 ├── style.css              # Global styles and base components
+├── about.css              # About page specific styles
 ├── admin-common.css        # Shared admin components (tables, forms, alerts)
 ├── admin-login.css         # Admin login page specific styles
 ├── auth.css               # User authentication pages (login/register)
@@ -14,8 +15,10 @@ assets/css/
 ├── dashboard.css          # Admin dashboard specific styles
 ├── index.css              # Homepage specific styles
 ├── locations.css          # Admin locations management page
+├── payment.css            # Payment page specific styles
 ├── profile.css            # User profile page styles
 ├── reservation.css        # Reservation-related pages styles
+├── services.css           # Services page specific styles
 └── README.md              # This documentation file
 ```
 
@@ -134,6 +137,40 @@ assets/css/
   - Reservation list (.reservations-list)
   - Date picker enhancements
 - **Used by**: `reservation.php`, `reservations.php`, `reservation-details.php`
+
+### **about.css** - About Page
+- **Purpose**: Styles specific to the about page
+- **Includes**:
+  - Page header with background (.page-header)
+  - About and mission sections (.about-section, .mission-section)
+  - Values grid (.values-grid)
+  - Team member cards (.team-member)
+  - Testimonials section (.testimonials-section)
+  - CTA section (.cta)
+  - Animations (fadeInDown, fadeInUp)
+- **Used by**: `about.php`
+
+### **services.css** - Services Page
+- **Purpose**: Styles for services listing and details pages
+- **Includes**:
+  - Services grid layout (.services-grid)
+  - Service cards (.service-card)
+  - Service details section (.service-details)
+  - Service benefits list (.service-benefits)
+  - Services CTA section (.services-cta)
+  - Pricing display (.service-price)
+- **Used by**: `services.php`, `service-details.php`
+
+### **payment.css** - Payment Page
+- **Purpose**: Styles for payment processing pages
+- **Includes**:
+  - Payment card layout (.payment-card)
+  - Payment header (.payment-header)
+  - Reservation summary (.reservation-summary)
+  - Payment form (.payment-form)
+  - Payment method selection (.payment-method)
+  - Payment actions (.payment-actions)
+- **Used by**: `payment.php`, `checkout.php`
 
 ## 🔧 Implementation Guidelines
 

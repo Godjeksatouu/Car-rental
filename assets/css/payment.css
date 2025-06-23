@@ -1,0 +1,264 @@
+/* Payment Page Styles */
+
+.payment-section {
+    padding: 64px 0;
+    background: var(--gray-50);
+    min-height: calc(100vh - 200px);
+}
+
+.payment-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.payment-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.payment-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--white);
+    padding: 32px;
+    text-align: center;
+}
+
+.payment-header h2 {
+    font-size: 1.75rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.payment-header p {
+    opacity: 0.9;
+    margin: 0;
+}
+
+.reservation-summary {
+    padding: 32px;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.reservation-summary h3 {
+    font-size: 1.25rem;
+    margin-bottom: 24px;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reservation-summary h3::before {
+    content: '\f46d';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--primary-color);
+}
+
+.summary-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-100);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row.total {
+    background: var(--gray-50);
+    padding: 16px;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    margin-top: 16px;
+}
+
+.detail-row .label {
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.detail-row .value {
+    color: var(--gray-800);
+    font-weight: 600;
+}
+
+.payment-form {
+    padding: 32px;
+}
+
+.payment-form h3 {
+    font-size: 1.25rem;
+    margin-bottom: 16px;
+    color: var(--gray-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.payment-form h3::before {
+    content: '\f09d';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    color: var(--primary-color);
+}
+
+.payment-note {
+    background: rgba(0, 123, 255, 0.1);
+    border: 1px solid rgba(0, 123, 255, 0.2);
+    border-radius: var(--border-radius);
+    padding: 16px;
+    margin-bottom: 24px;
+    color: var(--primary-color);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.payment-note i {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.payment-method {
+    margin-bottom: 32px;
+}
+
+.method-option {
+    border: 2px solid var(--gray-200);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--white);
+}
+
+.method-option:hover {
+    border-color: var(--primary-color);
+    background: rgba(53, 99, 233, 0.02);
+}
+
+.method-option.selected {
+    border-color: var(--primary-color);
+    background: rgba(53, 99, 233, 0.05);
+}
+
+.method-option input[type="radio"] {
+    margin: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.method-info {
+    flex: 1;
+}
+
+.method-info h4 {
+    margin: 0 0 4px 0;
+    color: var(--gray-800);
+    font-size: 1.1rem;
+}
+
+.method-info p {
+    margin: 0;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+.method-icon {
+    font-size: 1.5rem;
+    color: var(--primary-color);
+}
+
+.payment-actions {
+    display: flex;
+    gap: 16px;
+    justify-content: space-between;
+    margin-top: 32px;
+}
+
+.payment-actions .btn {
+    flex: 1;
+    padding: 14px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .payment-section {
+        padding: 40px 0;
+    }
+    
+    .payment-header,
+    .reservation-summary,
+    .payment-form {
+        padding: 24px;
+    }
+    
+    .payment-header h2 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .detail-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .payment-actions {
+        flex-direction: column;
+    }
+    
+    .method-option {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    .payment-content {
+        margin: 0 16px;
+    }
+    
+    .payment-header,
+    .reservation-summary,
+    .payment-form {
+        padding: 20px;
+    }
+    
+    .payment-note {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+    
+    .method-option {
+        padding: 12px;
+    }
+    
+    .method-info h4 {
+        font-size: 1rem;
+    }
+}
